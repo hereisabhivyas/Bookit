@@ -115,7 +115,12 @@ function getAdminFromToken(req, res, next) {
 
 app.use(express.json());
 
-const allowedOrigins = [/^http:\/\/localhost:\d+$/, /^http:\/\/127\.0\.0\.1:\d+$/];
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://bookit-cyan.vercel.app',
+  'https://bookitadmin.vercel.app'
+];
 app.use(cors({
   origin(origin, cb) {
     if (!origin) return cb(null, true);
@@ -127,7 +132,14 @@ app.use(cors({
 }));
 
 const mongoUri = process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/vibeweaver';
-mongoose.connect(mongoUri);
+
+mongoose.connect(mongoUri)
+  .then(() => console.log('✓ MongoDB connected successfully'))
+  .catch(err => {
+    console.error('✗ MongoDB connection failed:', err.message);
+    console.error('Make sure MONGO_URL environment variable is set correctly');
+    process.exit(1);
+  });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -140,8 +152,9 @@ app.post('/upload/images', getUserFromToken, upload.array('images', 10), async (
       return res.status(400).json({ error: 'No images uploaded' });
     }
 
-    // Generate local URLs for uploaded images
-    const urls = req.files.map(file => `http://localhost:3000/assets/uploads/${file.filename}`);
+    // Generate URLs for uploaded images (use API_URL env var or localhost)
+    const apiUrl = process.env.API_URL || `http://localhost:${process.env.PORT || 3000}`;
+    const urls = req.files.map(file => `${apiUrl}/assets/uploads/${file.filename}`);
 
     res.json({ 
       message: 'Images uploaded successfully', 
