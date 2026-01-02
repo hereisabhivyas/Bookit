@@ -115,17 +115,42 @@ function getAdminFromToken(req, res, next) {
 
 app.use(express.json());
 
-const allowedOrigins = [
-  'http://localhost:8080',
-  'http://localhost:5173',
-  'https://bookit-cyan.vercel.app',
-  'https://bookitadmin.vercel.app'
-];
+// CORS configuration - allow localhost for development and Vercel/Render for production
 app.use(cors({
   origin(origin, cb) {
+    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return cb(null, true);
-    const ok = allowedOrigins.some((re) => re.test(origin));
-    return cb(ok ? null : new Error('Not allowed by CORS'), ok);
+    
+    // List of allowed origins
+    const allowedOrigins = [
+      'http://localhost:8080',
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:10000',
+    ];
+    
+    // Allow any vercel.app domain (for Vercel deployments)
+    if (origin.includes('.vercel.app')) {
+      return cb(null, true);
+    }
+    
+    // Allow any onrender.com domain (for Render deployments)
+    if (origin.includes('.onrender.com')) {
+      return cb(null, true);
+    }
+    
+    // Check against static list
+    if (allowedOrigins.includes(origin)) {
+      return cb(null, true);
+    }
+    
+    // Allow in development mode
+    if (process.env.NODE_ENV === 'development') {
+      return cb(null, true);
+    }
+    
+    // Reject in production if not matched
+    cb(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
