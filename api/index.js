@@ -116,8 +116,8 @@ function getAdminFromToken(req, res, next) {
 app.use(express.json());
 
 const allowedOrigins = [
+  'http://localhost:8080',
   'http://localhost:5173',
-  'http://localhost:5174',
   'https://bookit-cyan.vercel.app',
   'https://bookitadmin.vercel.app'
 ];
