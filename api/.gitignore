@@ -1,0 +1,18 @@
+# Ignore environment and build artifacts
+.env
+node_modules/
+Assets/uploads/
+
+# Ignore secrets and credentials
+secrets/
+*.json
+!package.json
+!render.yaml
+!tsconfig*.json
+
+# Ignore Razorpay keys
+rzp-key.csv
+
+# Ignore logs
+*.log
+npm-debug.log*
