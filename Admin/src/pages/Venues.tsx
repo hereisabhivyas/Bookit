@@ -58,14 +58,14 @@ const Venues = () => {
     setError("");
     try {
       // Fetch venues
-      const venuesResp = await axios.get<Venue[]>("http://localhost:3000/admin/host/requests", {
+      const venuesResp = await axios.get<Venue[]>("https://bookit-dijk.onrender.com/admin/host/requests", {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       const approved = (venuesResp.data || []).filter((r) => r.status === "approved");
       setVenues(approved);
 
       // Fetch events
-      const eventsResp = await axios.get<Event[]>("http://localhost:3000/admin/events", {
+      const eventsResp = await axios.get<Event[]>("https://bookit-dijk.onrender.com/admin/events", {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       const approvedEvents = (eventsResp.data || []).filter((e) => e.status === "approved");
@@ -96,7 +96,7 @@ const Venues = () => {
   async function deleteVenue(id: string) {
     if (!window.confirm("Delete this venue? This action cannot be undone.")) return;
     try {
-      await axios.delete(`http://localhost:3000/admin/host/requests/${id}`, {
+      await axios.delete(`https://bookit-dijk.onrender.com/admin/host/requests/${id}`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       setVenues((prev) => prev.filter((v) => v._id !== id));
@@ -109,7 +109,7 @@ const Venues = () => {
   async function deleteEvent(id: string) {
     if (!window.confirm("Delete this event? This action cannot be undone.")) return;
     try {
-      await axios.delete(`http://localhost:3000/admin/events/${id}`, {
+      await axios.delete(`https://bookit-dijk.onrender.com/admin/events/${id}`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       setEvents((prev) => prev.filter((e) => e._id !== id));

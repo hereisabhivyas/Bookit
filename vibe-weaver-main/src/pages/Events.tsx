@@ -59,8 +59,8 @@ const Events = () => {
       setError("");
       try {
         const [eventsRes, venuesRes] = await Promise.all([
-          axios.get<Event[]>("http://localhost:3000/api/events"),
-          axios.get<Venue[]>("http://localhost:3000/api/venues"),
+          axios.get<Event[]>("https://bookit-dijk.onrender.com/api/events"),
+          axios.get<Venue[]>("https://bookit-dijk.onrender.com/api/venues"),
         ]);
         setEvents(eventsRes.data || []);
         setVenues(venuesRes.data || []);

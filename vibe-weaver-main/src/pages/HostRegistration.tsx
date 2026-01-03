@@ -150,7 +150,7 @@ const HostRegistration = () => {
 
       if (registrationType === "venue") {
         await axios.post(
-          "http://localhost:3000/host/requests",
+          "https://bookit-dijk.onrender.com/host/requests",
           {
             venueName: venueData.venueName,
             businessType: venueData.businessType,
@@ -167,7 +167,7 @@ const HostRegistration = () => {
         alert("Venue registration submitted! We'll review your application and get back to you soon.");
       } else {
         await axios.post(
-          "http://localhost:3000/host/events",
+          "https://bookit-dijk.onrender.com/host/events",
           {
             title: eventData.title,
             category: eventData.category,

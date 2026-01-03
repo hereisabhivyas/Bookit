@@ -89,7 +89,7 @@ const Profile = () => {
           setLoading(false);
           return;
         }
-        const resp = await axios.get("http://localhost:3000/auth/profile", {
+        const resp = await axios.get("https://bookit-dijk.onrender.com/auth/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (resp.data && resp.data.user) {
@@ -103,10 +103,10 @@ const Profile = () => {
 
         // Fetch user's approved venues and events
         try {
-          const venuesResp = await axios.get("http://localhost:3000/host/my-requests", {
+          const venuesResp = await axios.get("https://bookit-dijk.onrender.com/host/my-requests", {
             headers: { Authorization: `Bearer ${token}` },
           });
-          const eventsResp = await axios.get("http://localhost:3000/host/my-events", {
+          const eventsResp = await axios.get("https://bookit-dijk.onrender.com/host/my-events", {
             headers: { Authorization: `Bearer ${token}` },
           });
           
@@ -143,7 +143,7 @@ const Profile = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const resp = await axios.put("http://localhost:3000/auth/profile", profileData, {
+      const resp = await axios.put("https://bookit-dijk.onrender.com/auth/profile", profileData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (resp.data) {
@@ -162,7 +162,7 @@ const Profile = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const resp = await axios.put("http://localhost:3000/auth/settings", settings, {
+      const resp = await axios.put("https://bookit-dijk.onrender.com/auth/settings", settings, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (resp.data) {
@@ -194,7 +194,7 @@ const Profile = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        "http://localhost:3000/auth/password",
+        "https://bookit-dijk.onrender.com/auth/password",
         {
           currentPassword: passwordForm.currentPassword,
           newPassword: passwordForm.newPassword,
@@ -228,7 +228,7 @@ const Profile = () => {
     setDeleting(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.delete("http://localhost:3000/auth/account", {
+      await axios.delete("https://bookit-dijk.onrender.com/auth/account", {
         headers: { Authorization: `Bearer ${token}` },
         data: { password: deletePassword },
       });

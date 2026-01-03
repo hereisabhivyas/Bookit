@@ -20,7 +20,7 @@ const AdminLogin = ({ setIsAuthenticated }: AdminLoginProps) => {
     setLoading(true);
 
     try {
-      const resp = await axios.post("http://localhost:3000/admin/login", {
+      const resp = await axios.post("https://bookit-dijk.onrender.com/admin/login", {
         email,
         password,
       });

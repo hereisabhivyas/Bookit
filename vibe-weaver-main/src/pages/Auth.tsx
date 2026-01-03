@@ -53,7 +53,7 @@ const Auth = () => {
 
     setLoading(true);
     try {
-      const url = isLogin ? 'http://localhost:3000/auth/login' : 'http://localhost:3000/auth/signup';
+      const url = isLogin ? 'https://bookit-dijk.onrender.com/auth/login' : 'https://bookit-dijk.onrender.com/auth/signup';
       const payload: any = { email, password };
       if (!isLogin) payload.name = name;
 

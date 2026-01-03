@@ -38,7 +38,7 @@ const Users = () => {
     setLoading(true);
     setError("");
     try {
-      const resp = await axios.get<User[]>("http://localhost:3000/admin/users", {
+      const resp = await axios.get<User[]>("https://bookit-dijk.onrender.com/admin/users", {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       const sortedUsers = (resp.data || []).sort((a, b) => {
@@ -59,7 +59,7 @@ const Users = () => {
   const handleDeleteUser = async (userId: string) => {
     if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
     try {
-      await axios.delete(`http://localhost:3000/admin/users/${userId}`, {
+      await axios.delete(`https://bookit-dijk.onrender.com/admin/users/${userId}`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       setUsers((prev) => prev.filter((u) => u._id !== userId));

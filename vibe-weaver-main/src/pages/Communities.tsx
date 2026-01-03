@@ -53,7 +53,7 @@ const Communities = () => {
 
   const fetchCommunities = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/communities');
+      const response = await fetch('https://bookit-dijk.onrender.com/api/communities');
       const data = await response.json();
       setCommunities(data);
       // After loading communities, if logged in, fetch membership status per community
@@ -62,7 +62,7 @@ const Communities = () => {
         const results = await Promise.all(
           data.map(async (c: any) => {
             try {
-              const res = await fetch(`http://localhost:3000/api/communities/${c._id}`, {
+              const res = await fetch(`https://bookit-dijk.onrender.com/api/communities/${c._id}`, {
                 headers: { Authorization: `Bearer ${token}` },
               });
               if (!res.ok) return { id: c._id, status: null };
@@ -106,7 +106,7 @@ const Communities = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/communities', {
+      const response = await fetch('https://bookit-dijk.onrender.com/api/communities', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

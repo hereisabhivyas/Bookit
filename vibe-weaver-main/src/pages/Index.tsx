@@ -92,7 +92,7 @@ const Index = () => {
         return;
       }
       try {
-        const res = await fetch('http://localhost:3000/auth/profile', {
+        const res = await fetch('https://bookit-dijk.onrender.com/auth/profile', {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -112,9 +112,9 @@ const Index = () => {
       try {
         setError("");
         const [venuesRes, eventsRes, communitiesRes] = await Promise.all([
-          fetch('http://localhost:3000/api/venues'),
-          fetch('http://localhost:3000/api/events'),
-          fetch('http://localhost:3000/api/communities')
+          fetch('https://bookit-dijk.onrender.com/api/venues'),
+          fetch('https://bookit-dijk.onrender.com/api/events'),
+          fetch('https://bookit-dijk.onrender.com/api/communities')
         ]);
 
         const venuesData = await venuesRes.json();

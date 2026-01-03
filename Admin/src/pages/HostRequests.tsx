@@ -52,10 +52,10 @@ const HostRequests = () => {
     setError("");
     try {
       const [venuesResp, eventsResp] = await Promise.all([
-        axios.get<Request[]>("http://localhost:3000/admin/host/requests", {
+        axios.get<Request[]>("https://bookit-dijk.onrender.com/admin/host/requests", {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        axios.get<EventRequest[]>("http://localhost:3000/admin/events", {
+        axios.get<EventRequest[]>("https://bookit-dijk.onrender.com/admin/events", {
           headers: { Authorization: `Bearer ${adminToken}` },
         })
       ]);
@@ -87,8 +87,8 @@ const HostRequests = () => {
     if (!window.confirm(`${status === "approved" ? "Approve" : "Reject"} this ${type}?`)) return;
     try {
       const endpoint = type === "venue" 
-        ? `http://localhost:3000/admin/host/requests/${id}/status`
-        : `http://localhost:3000/admin/events/${id}/status`;
+        ? `https://bookit-dijk.onrender.com/admin/host/requests/${id}/status`
+        : `https://bookit-dijk.onrender.com/admin/events/${id}/status`;
       
       const resp = await axios.put<Request | EventRequest>(
         endpoint,

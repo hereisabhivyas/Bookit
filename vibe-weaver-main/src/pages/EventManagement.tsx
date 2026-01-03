@@ -118,7 +118,7 @@ const EventManagement = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const resp = await axios.get(`http://localhost:3000/host/my-events/${id}`, {
+      const resp = await axios.get(`https://bookit-dijk.onrender.com/host/my-events/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -162,7 +162,7 @@ const EventManagement = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const resp = await axios.get(`http://localhost:3000/host/my-events/${id}`, {
+      const resp = await axios.get(`https://bookit-dijk.onrender.com/host/my-events/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -258,7 +258,7 @@ const EventManagement = () => {
       }
 
       const resp = await axios.post(
-        `http://localhost:3000/upload/images`,
+        `https://bookit-dijk.onrender.com/upload/images`,
         formData,
         {
           headers: {
@@ -294,7 +294,7 @@ const EventManagement = () => {
       const imgUrl = eventData.images[index];
       if (!imgUrl) return;
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:3000/host/my-events/${id}/images`, {
+      await axios.delete(`https://bookit-dijk.onrender.com/host/my-events/${id}/images`, {
         headers: { Authorization: `Bearer ${token}` },
         data: { url: imgUrl },
       });
@@ -319,7 +319,7 @@ const EventManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const resp = await axios.put(
-        `http://localhost:3000/host/my-events/${id}`,
+        `https://bookit-dijk.onrender.com/host/my-events/${id}`,
         eventData,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -342,7 +342,7 @@ const EventManagement = () => {
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:3000/host/my-events/${id}`, {
+      await axios.delete(`https://bookit-dijk.onrender.com/host/my-events/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       navigate("/profile");

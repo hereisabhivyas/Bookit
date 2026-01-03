@@ -47,7 +47,7 @@ interface DashboardData {
   pendingHostRequests: HostRequest[];
 }
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://bookit-dijk.onrender.com';
 
 const Dashboard = () => {
   const navigate = useNavigate();

@@ -52,7 +52,7 @@ const CommunityCard = ({
 
     setJoining(true);
     try {
-      const response = await fetch(`http://localhost:3000/api/communities/${id}/join`, {
+      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/join`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

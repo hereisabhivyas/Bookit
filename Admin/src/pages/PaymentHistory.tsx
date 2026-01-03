@@ -14,7 +14,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-const API_URL = "http://localhost:3000";
+const API_URL = "https://bookit-dijk.onrender.com";
 
 type PaymentStatus = "captured" | "paid" | "created" | "failed" | "pending" | "refunded" | string;
 

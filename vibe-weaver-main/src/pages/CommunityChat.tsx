@@ -132,7 +132,7 @@ const CommunityChat = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!id || !token) return;
-    const s = ioClient('http://localhost:3000', {
+    const s = ioClient('https://bookit-dijk.onrender.com', {
       transports: ['websocket'],
       withCredentials: true,
     });
@@ -195,10 +195,10 @@ const CommunityChat = () => {
 
     try {
       const [communityRes, messagesRes] = await Promise.all([
-        fetch(`http://localhost:3000/api/communities/${id}`, {
+        fetch(`https://bookit-dijk.onrender.com/api/communities/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`http://localhost:3000/api/communities/${id}/messages`, {
+        fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/messages`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);
@@ -242,7 +242,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/communities/${id}/members`, {
+      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/members`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -260,7 +260,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/communities/${id}/pending-requests`, {
+      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/pending-requests`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -278,7 +278,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/communities/${id}/leave`, {
+      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/leave`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -308,7 +308,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/communities/${id}`, {
+      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -338,7 +338,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/communities/${id}/members/${encodeURIComponent(memberEmail)}`, {
+      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/members/${encodeURIComponent(memberEmail)}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -368,7 +368,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/communities/${id}/requests/${encodeURIComponent(memberEmail)}/approve`, {
+      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/requests/${encodeURIComponent(memberEmail)}/approve`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -399,7 +399,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/communities/${id}/requests/${encodeURIComponent(memberEmail)}/reject`, {
+      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/requests/${encodeURIComponent(memberEmail)}/reject`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -429,7 +429,7 @@ const CommunityChat = () => {
 
     setAddingMember(true);
     try {
-      const response = await fetch(`http://localhost:3000/api/communities/${id}/add-member`, {
+      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/add-member`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -470,7 +470,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/communities/${id}`, {
+      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -509,7 +509,7 @@ const CommunityChat = () => {
 
     setSending(true);
     try {
-      const response = await fetch(`http://localhost:3000/api/communities/${id}/messages`, {
+      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -120,7 +120,7 @@ const VenueManagement = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const resp = await axios.get(`http://localhost:3000/host/my-requests/${id}`, {
+      const resp = await axios.get(`https://bookit-dijk.onrender.com/host/my-requests/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -287,7 +287,7 @@ const VenueManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const resp = await axios.post(
-        `http://localhost:3000/host/my-requests/${id}/seats/${selectedSeat}/bookings`,
+        `https://bookit-dijk.onrender.com/host/my-requests/${id}/seats/${selectedSeat}/bookings`,
         { date: seatBooking.date, startTime: seatBooking.startTime, hours: seatBooking.hours },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -309,7 +309,7 @@ const VenueManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const resp = await axios.delete(
-        `http://localhost:3000/host/my-requests/${id}/seats/${seatId}/bookings/${bookingIndex}`,
+        `https://bookit-dijk.onrender.com/host/my-requests/${id}/seats/${seatId}/bookings/${bookingIndex}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       // Re-fetch to sync UI and ensure upcoming list reflects deletion
@@ -342,7 +342,7 @@ const VenueManagement = () => {
       }
 
       const resp = await axios.post(
-        `http://localhost:3000/upload/images`,
+        `https://bookit-dijk.onrender.com/upload/images`,
         formData,
         {
           headers: {
@@ -378,7 +378,7 @@ const VenueManagement = () => {
       const imgUrl = venueData.images[index];
       if (!imgUrl) return;
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:3000/host/my-requests/${id}/images`, {
+      await axios.delete(`https://bookit-dijk.onrender.com/host/my-requests/${id}/images`, {
         headers: { Authorization: `Bearer ${token}` },
         data: { url: imgUrl },
       });
@@ -403,7 +403,7 @@ const VenueManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const resp = await axios.put(
-        `http://localhost:3000/host/my-requests/${id}`,
+        `https://bookit-dijk.onrender.com/host/my-requests/${id}`,
         { ...venueData, seats },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -424,7 +424,7 @@ const VenueManagement = () => {
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:3000/host/my-requests/${id}`, {
+      await axios.delete(`https://bookit-dijk.onrender.com/host/my-requests/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       navigate("/profile");
