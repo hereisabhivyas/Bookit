@@ -37,7 +37,7 @@ export default function Billing() {
   const [success, setSuccess] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const total = useMemo(() => {
+  const subtotal = useMemo(() => {
     if (type === 'venue') {
       const hours = details.hours || 0;
       const seatIds: number[] = details.seatIds || [];
@@ -54,6 +54,9 @@ export default function Billing() {
       return qty * unit;
     }
   }, [type, details]);
+
+  const platformFee = useMemo(() => subtotal * 0.05, [subtotal]);
+  const total = useMemo(() => subtotal + platformFee, [subtotal, platformFee]);
 
   const loadRazorpay = () => new Promise<boolean>((resolve) => {
     if (window.Razorpay) return resolve(true);
@@ -218,9 +221,20 @@ export default function Billing() {
                 </div>
               )}
 
-              <div className="mt-4 p-4 bg-muted rounded-lg flex items-center justify-between">
-                <span className="text-lg font-semibold">Total</span>
-                <span className="text-2xl font-bold">${total.toFixed(2)}</span>
+              <div className="mt-4 pt-4 border-t space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Platform Fee & Convenience Fee (5%)</span>
+                  <span className="font-medium">${platformFee.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200 flex items-center justify-between">
+                <span className="text-lg font-semibold text-foreground">Total Amount</span>
+                <span className="text-2xl font-bold text-primary">${total.toFixed(2)}</span>
               </div>
 
               <div className="mt-6 flex justify-end">
