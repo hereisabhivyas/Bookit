@@ -127,6 +127,8 @@ app.use(cors({
       'http://localhost:5173',
       'http://localhost:3000',
       'http://localhost:10000',
+      'https://bookitadmin-a97a31xnx-abhishek-vyas-projects-e9f496ad.vercel.app',
+      'https://bookit-cyan.vercel.app',
     ];
     
     // Allow any vercel.app domain (for Vercel deployments)
