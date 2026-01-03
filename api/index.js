@@ -64,6 +64,7 @@ const upload = multer({
 const secretKey = bcrypt.genSaltSync(10);
 const app = express();
 const port = process.env.PORT || 3000;
+const defaultApiUrl = (process.env.API_URL || 'https://bookit-dijk.onrender.com').replace(/\/$/, '');
 const server = http.createServer(app);
 const io = new SocketIOServer(server, {
   cors: {
@@ -180,7 +181,7 @@ app.post('/upload/images', getUserFromToken, upload.array('images', 10), async (
     }
 
     // Generate URLs for uploaded images (use API_URL env var or localhost)
-    const apiUrl = process.env.API_URL || `http://localhost:${process.env.PORT || 3000}`;
+    const apiUrl = defaultApiUrl;
     const urls = req.files.map(file => `${apiUrl}/assets/uploads/${file.filename}`);
 
     res.json({ 
@@ -714,7 +715,7 @@ app.delete('/host/my-requests/:id/images', getUserFromToken, async (req, res) =>
 
     // Best-effort: delete local file if it belongs to our uploads folder
     try {
-      const prefix = 'http://localhost:3000/assets/uploads/';
+      const prefix = `${defaultApiUrl}/assets/uploads/`;
       if (removedUrl && String(removedUrl).startsWith(prefix)) {
         const filename = String(removedUrl).slice(prefix.length);
         const pathModule = await import('path');
@@ -802,7 +803,7 @@ app.delete('/host/my-events/:id/images', getUserFromToken, async (req, res) => {
 
     // Best-effort: delete local file if it belongs to our uploads folder
     try {
-      const prefix = 'http://localhost:3000/assets/uploads/';
+      const prefix = `${defaultApiUrl}/assets/uploads/`;
       if (removedUrl && String(removedUrl).startsWith(prefix)) {
         const filename = String(removedUrl).slice(prefix.length);
         const pathModule = await import('path');
