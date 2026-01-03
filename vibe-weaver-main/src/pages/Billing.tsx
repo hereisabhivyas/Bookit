@@ -232,9 +232,9 @@ export default function Billing() {
                 </div>
               </div>
 
-              <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200 flex items-center justify-between">
-                <span className="text-lg font-semibold text-foreground">Total Amount</span>
-                <span className="text-2xl font-bold text-primary">${total.toFixed(2)}</span>
+              <div className="mt-4 p-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg shadow-md flex items-center justify-between">
+                <span className="text-lg font-semibold text-white">Total Amount</span>
+                <span className="text-2xl font-bold text-white">${total.toFixed(2)}</span>
               </div>
 
               <div className="mt-6 flex justify-end">
