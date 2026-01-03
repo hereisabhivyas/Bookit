@@ -16,6 +16,11 @@ import VenueBooking from "./pages/VenueBooking";
 import EventBooking from "./pages/EventBooking";
 import Billing from "./pages/Billing";
 import BookingHistory from "./pages/BookingHistory";
+import Contact from "./pages/Contact";
+import Terms from "./pages/Terms";
+import CancellationRefund from "./pages/CancellationRefund";
+import ShippingPolicy from "./pages/ShippingPolicy";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 import axios from "axios";
 
@@ -44,6 +49,11 @@ const App = () => (
           <Route path="/events/:id/book" element={<EventBooking />} />
           <Route path="/billing" element={<Billing />} />
           <Route path="/bookings" element={<BookingHistory />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/cancellation-refund" element={<CancellationRefund />} />
+          <Route path="/shipping" element={<ShippingPolicy />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

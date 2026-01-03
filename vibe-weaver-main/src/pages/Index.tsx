@@ -472,10 +472,10 @@ const Index = () => {
               <span className="text-muted-foreground">© 2025</span>
             </div>
             <div className="flex gap-6 text-muted-foreground">
-              <a href="#" className="hover:text-primary transition-colors">About</a>
-              <a href="#" className="hover:text-primary transition-colors">Privacy</a>
-              <a href="#" className="hover:text-primary transition-colors">Terms</a>
-              <a href="#" className="hover:text-primary transition-colors">Contact</a>
+              <Link to="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
+              <Link to="/terms" className="hover:text-primary transition-colors">Terms</Link>
+              <Link to="/shipping" className="hover:text-primary transition-colors">Shipping</Link>
+              <Link to="/contact" className="hover:text-primary transition-colors">Contact</Link>
             </div>
           </div>
         </div>
