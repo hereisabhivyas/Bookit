@@ -25,8 +25,7 @@ import Payment from './models/payment.js';
 import { encrypt, decrypt } from './utils/encryption.js';
 // Cloudinary cloud storage
 import multer from 'multer';
-import pkg from 'multer-storage-cloudinary';
-const { CloudinaryStorage } = pkg;
+import cloudinaryStorage from 'multer-storage-cloudinary';
 import { v2 as cloudinary } from 'cloudinary';
 import crypto from 'crypto';
 import razorpay, { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } from './utils/razorpay.js';
@@ -41,7 +40,7 @@ cloudinary.config({
 });
 
 // Configure multer for Cloudinary uploads
-const storage = new CloudinaryStorage({
+const storage = cloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'vibeweaver',
