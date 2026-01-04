@@ -23,26 +23,29 @@ import Message from './models/message.js';
 import CommunityMember from './models/communityMember.js';
 import Payment from './models/payment.js';
 import { encrypt, decrypt } from './utils/encryption.js';
-// Google Drive upload removed; using local storage only
+// Cloudinary cloud storage
 import multer from 'multer';
-import fs from 'fs';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 import crypto from 'crypto';
 import razorpay, { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } from './utils/razorpay.js';
 
 dotenv.config();
 
-// Configure multer for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'Assets', 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Configure multer for Cloudinary uploads
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'vibeweaver',
+    allowed_formats: ['jpeg', 'jpg', 'png', 'gif', 'webp'],
+    resource_type: 'auto'
   }
 });
 
@@ -169,10 +172,6 @@ mongoose.connect(mongoUri)
     process.exit(1);
   });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-app.use('/assets', express.static(path.join(__dirname, 'Assets')));
-
 // Image upload endpoint (requires auth)
 app.post('/upload/images', getUserFromToken, upload.array('images', 10), async (req, res) => {
   try {
@@ -180,9 +179,8 @@ app.post('/upload/images', getUserFromToken, upload.array('images', 10), async (
       return res.status(400).json({ error: 'No images uploaded' });
     }
 
-    // Generate URLs for uploaded images (use API_URL env var or localhost)
-    const apiUrl = defaultApiUrl;
-    const urls = req.files.map(file => `${apiUrl}/assets/uploads/${file.filename}`);
+    // Extract Cloudinary URLs from uploaded files
+    const urls = req.files.map(file => file.secure_url);
 
     res.json({ 
       message: 'Images uploaded successfully', 

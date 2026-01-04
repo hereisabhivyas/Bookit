@@ -70,6 +70,10 @@ const VenueManagement = () => {
 
   // Date & time helpers for seat dialog (match booking page UI)
   const todayDate = () => new Date().toISOString().slice(0, 10);
+  const getTodaysBookingCount = (bookings: Array<{ date: string; startTime: string; endTime: string; hours?: number; createdBy?: 'user' | 'owner'; createdByEmail?: string; createdByName?: string }>) => {
+    const today = todayDate();
+    return bookings.filter(booking => booking.date === today).length;
+  };
   const currentTime24 = () => {
     const now = new Date();
     const hh = String(now.getHours()).padStart(2, '0');
@@ -744,24 +748,26 @@ const VenueManagement = () => {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {seats.map((seat) => (
+                    {seats.map((seat) => {
+                      const todayBookings = getTodaysBookingCount(seat.bookings);
+                      return (
                       <div key={seat.id} className="space-y-2 p-4 border-2 border-gray-200 rounded-lg hover:border-primary/50 transition-all">
                         <div className="flex items-center justify-between">
                           <button
                           onClick={() => handleSeatClick(seat.id)}
                           className={`flex-1 p-3 rounded-lg border-2 transition-all hover:shadow-md ${
-                            seat.bookings.length > 0 
+                            todayBookings > 0 
                               ? 'border-orange-500 bg-orange-50' 
                               : 'border-gray-300 bg-white hover:border-primary'
                           }`}
-                          title={`Seat ${seat.id} - ${seat.bookings.length} booking(s)`}
+                          title={`Seat ${seat.id} - ${todayBookings} booking(s) today`}
                           >
                           <div className="flex flex-col items-center gap-1">
-                            <Armchair className={`w-6 h-6 ${seat.bookings.length > 0 ? 'text-orange-600' : 'text-gray-600'}`} />
+                            <Armchair className={`w-6 h-6 ${todayBookings > 0 ? 'text-orange-600' : 'text-gray-600'}`} />
                             <span className="text-xs font-semibold">Seat {seat.id}</span>
-                            {seat.bookings.length > 0 && (
+                            {todayBookings > 0 && (
                               <span className="text-xs bg-orange-600 text-white px-2 py-0.5 rounded-full">
-                                {seat.bookings.length}
+                                {todayBookings}
                               </span>
                             )}
                           </div>
@@ -787,7 +793,8 @@ const VenueManagement = () => {
                           />
                         </div>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
 
                   <div className="flex items-center gap-2 text-sm text-muted-foreground p-4 bg-muted rounded-lg">
