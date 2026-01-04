@@ -39,13 +39,21 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// Validate Cloudinary configuration
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+  console.warn('⚠️  WARNING: Cloudinary credentials are not fully configured. Image uploads may fail.');
+}
+
 // Configure multer for Cloudinary uploads
 const storage = cloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'vibeweaver',
-    allowed_formats: ['jpeg', 'jpg', 'png', 'gif', 'webp'],
-    resource_type: 'auto'
+  params: async (req, file) => {
+    return {
+      folder: 'vibeweaver',
+      allowed_formats: ['jpeg', 'jpg', 'png', 'gif', 'webp'],
+      resource_type: 'auto',
+      public_id: `${Date.now()}-${file.fieldname}`
+    };
   }
 });
 
@@ -176,6 +184,7 @@ mongoose.connect(mongoUri)
 app.post('/upload/images', getUserFromToken, (req, res, next) => {
   upload.array('images', 10)(req, res, (err) => {
     if (err instanceof multer.MulterError) {
+      console.error('Multer error:', err.code, err.message);
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({ error: 'File size too large (max 10MB)' });
       }
@@ -184,21 +193,27 @@ app.post('/upload/images', getUserFromToken, (req, res, next) => {
       }
       return res.status(400).json({ error: err.message });
     } else if (err) {
+      console.error('Upload middleware error:', err.message || err);
       return res.status(400).json({ error: err.message || 'Upload failed' });
     }
     next();
   });
 }, async (req, res) => {
   try {
+    console.log('Upload request received - files:', req.files?.length || 0);
+    
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No images uploaded' });
     }
+
+    console.log('Processing files:', req.files.map(f => ({ name: f.filename, url: f.secure_url })));
 
     // Extract Cloudinary URLs from uploaded files
     const urls = req.files.map(file => file.secure_url).filter(url => url);
 
     if (urls.length === 0) {
-      return res.status(500).json({ error: 'Failed to process uploaded files' });
+      console.error('No secure URLs returned from Cloudinary');
+      return res.status(500).json({ error: 'Failed to process uploaded files - no URLs returned' });
     }
 
     res.json({ 
