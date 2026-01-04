@@ -173,14 +173,33 @@ mongoose.connect(mongoUri)
   });
 
 // Image upload endpoint (requires auth)
-app.post('/upload/images', getUserFromToken, upload.array('images', 10), async (req, res) => {
+app.post('/upload/images', getUserFromToken, (req, res, next) => {
+  upload.array('images', 10)(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'File size too large (max 10MB)' });
+      }
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ error: 'Too many files (max 10)' });
+      }
+      return res.status(400).json({ error: err.message });
+    } else if (err) {
+      return res.status(400).json({ error: err.message || 'Upload failed' });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No images uploaded' });
     }
 
     // Extract Cloudinary URLs from uploaded files
-    const urls = req.files.map(file => file.secure_url);
+    const urls = req.files.map(file => file.secure_url).filter(url => url);
+
+    if (urls.length === 0) {
+      return res.status(500).json({ error: 'Failed to process uploaded files' });
+    }
 
     res.json({ 
       message: 'Images uploaded successfully', 
@@ -188,7 +207,7 @@ app.post('/upload/images', getUserFromToken, upload.array('images', 10), async (
     });
   } catch (err) {
     console.error('Error uploading images:', err);
-    res.status(500).json({ error: 'Failed to upload images' });
+    res.status(500).json({ error: 'Failed to upload images: ' + (err.message || 'Unknown error') });
   }
 });
 
