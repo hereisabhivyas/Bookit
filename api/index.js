@@ -125,7 +125,13 @@ function getAdminFromToken(req, res, next) {
   }
 }
 
-app.use(express.json());
+app.use((req, res, next) => {
+  // Skip body parsing for multipart/form-data (file uploads)
+  if (req.is('multipart/form-data')) {
+    return next();
+  }
+  express.json()(req, res, next);
+});
 
 // CORS configuration - allow localhost for development and Vercel/Render for production
 app.use(cors({
