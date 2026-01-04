@@ -25,7 +25,8 @@ import Payment from './models/payment.js';
 import { encrypt, decrypt } from './utils/encryption.js';
 // Cloudinary cloud storage
 import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import pkg from 'multer-storage-cloudinary';
+const { CloudinaryStorage } = pkg;
 import { v2 as cloudinary } from 'cloudinary';
 import crypto from 'crypto';
 import razorpay, { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } from './utils/razorpay.js';
