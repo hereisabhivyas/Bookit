@@ -19,14 +19,6 @@ const Auth = () => {
   const [serverError, setServerError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; name?: string }>({});
-
-  // const handleSubmit = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   // TODO: Implement auth with Lovable Cloud
-  //   console.log(isLogin ? "Login" : "Signup", { email, password, name });
-  // };
-
-
   function validate() {
     const errors: { email?: string; password?: string; name?: string } = {};
     const emailRegex = /\S+@\S+\.\S+/;
