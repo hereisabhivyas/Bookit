@@ -95,7 +95,7 @@ const Profile = () => {
         if (resp.data && resp.data.user) {
           setProfileData(resp.data.user);
           if (resp.data.settings) {
-            setSettings(resp.data.settings);
+            setSettings((prev) => ({ ...prev, ...resp.data.settings }));
           }
         } else {
           setError("Profile data not found");
