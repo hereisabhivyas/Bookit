@@ -383,7 +383,7 @@ app.put('/auth/profile', getUserFromToken, async (req, res) => {
         email: user.email,
         phone: user.phone || '',
         location: user.location || '',
-        bio: user.bio || ''
+         bio: user.bio || ''
       },
       message: 'Profile updated successfully'
     });
