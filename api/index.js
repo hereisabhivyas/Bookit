@@ -24,7 +24,7 @@ import Payment from './models/payment.js';
 import { encrypt, decrypt } from './utils/encryption.js';
 // Cloudinary cloud storage
 import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import cloudinaryStorage from 'multer-storage-cloudinary';
 import { v2 as cloudinary } from 'cloudinary';
 import crypto from 'crypto';
 import razorpay, { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } from './utils/razorpay.js';
@@ -43,8 +43,8 @@ if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !pr
   console.warn('⚠️  WARNING: Cloudinary credentials are not fully configured. Image uploads may fail.');
 }
 
-// Configure multer for Cloudinary uploads
-const storage = new CloudinaryStorage({
+// Configure multer for Cloudinary uploads (function API)
+const storage = cloudinaryStorage({
   cloudinary,
   params: (req, file) => {
     const baseName = path.parse(file.originalname || 'upload').name;
