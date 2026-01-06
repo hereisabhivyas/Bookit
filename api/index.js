@@ -145,12 +145,12 @@ app.use(cors({
     ];
     
     // Allow any vercel.app domain (for Vercel deployments)
-    if (origin.includes('.vercel.app')) {
+    if (origin && origin.includes('.vercel.app')) {
       return cb(null, true);
     }
     
     // Allow any onrender.com domain (for Render deployments)
-    if (origin.includes('.onrender.com')) {
+    if (origin && origin.includes('.onrender.com')) {
       return cb(null, true);
     }
     
@@ -165,10 +165,14 @@ app.use(cors({
     }
     
     // Reject in production if not matched
+    console.warn(`CORS blocked origin: ${origin}`);
     cb(new Error('Not allowed by CORS'));
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 600,
 }));
 
 const mongoUri = process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/vibeweaver';
