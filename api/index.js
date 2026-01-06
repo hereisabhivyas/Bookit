@@ -11,7 +11,6 @@ import './models/user.js';
 import User from './models/user.js';
 import './models/admin.js';
 import Admin from './models/admin.js';
-import bodyParser from 'body-parser';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import HostRequest from './models/hostRequest.js';
@@ -25,7 +24,7 @@ import Payment from './models/payment.js';
 import { encrypt, decrypt } from './utils/encryption.js';
 // Cloudinary cloud storage
 import multer from 'multer';
-import cloudinaryStorage from 'multer-storage-cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { v2 as cloudinary } from 'cloudinary';
 import crypto from 'crypto';
 import razorpay, { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } from './utils/razorpay.js';
@@ -45,14 +44,15 @@ if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !pr
 }
 
 // Configure multer for Cloudinary uploads
-const storage = cloudinaryStorage({
-  cloudinary: cloudinary,
-  params: async (req, file) => {
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: (req, file) => {
+    const baseName = path.parse(file.originalname || 'upload').name;
     return {
       folder: 'vibeweaver',
       allowed_formats: ['jpeg', 'jpg', 'png', 'gif', 'webp'],
       resource_type: 'auto',
-      public_id: `${Date.now()}-${file.fieldname}`
+      public_id: `${Date.now()}-${baseName}`
     };
   }
 });
@@ -125,13 +125,8 @@ function getAdminFromToken(req, res, next) {
   }
 }
 
-app.use((req, res, next) => {
-  // Skip body parsing for multipart/form-data (file uploads)
-  if (req.is('multipart/form-data')) {
-    return next();
-  }
-  express.json()(req, res, next);
-});
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // CORS configuration - allow localhost for development and Vercel/Render for production
 app.use(cors({
