@@ -13,6 +13,7 @@ import './models/admin.js';
 import Admin from './models/admin.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import HostRequest from './models/hostRequest.js';
 import Venue from './models/venue.js';
 import Category from './models/category.js';
@@ -24,7 +25,7 @@ import Payment from './models/payment.js';
 import { encrypt, decrypt } from './utils/encryption.js';
 // Cloudinary cloud storage
 import multer from 'multer';
-import cloudinaryStorage from 'multer-storage-cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { v2 as cloudinary } from 'cloudinary';
 import crypto from 'crypto';
 import razorpay, { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } from './utils/razorpay.js';
@@ -43,8 +44,8 @@ if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !pr
   console.warn('⚠️  WARNING: Cloudinary credentials are not fully configured. Image uploads may fail.');
 }
 
-// Configure multer for Cloudinary uploads (function API)
-const storage = cloudinaryStorage({
+// Configure multer for Cloudinary uploads (class API - multer-storage-cloudinary v4)
+const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: 'vibeweaver',
@@ -72,10 +73,41 @@ const upload = multer({
   }
 });
 
+// Normalize incoming images payloads to a clean string array
+function normalizeImages(input) {
+  if (!input) return [];
+  if (Array.isArray(input)) {
+    return input
+      .filter(Boolean)
+      .map((item) => {
+        // Handle objects with url/secure_url properties from multer-storage-cloudinary
+        if (typeof item === 'object' && (item.url || item.secure_url || item.path)) {
+          return item.secure_url || item.url || item.path;
+        }
+        return String(item);
+      })
+      .filter((url) => url && url !== '[object Object]');
+  }
+  if (typeof input === 'string') {
+    return input
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+// Extract images from common payload keys
+function extractImages(body = {}) {
+  return normalizeImages(
+    body.images || body.imageUrls || body.urls || body.photos || body.pictures
+  );
+}
+
 const secretKey = bcrypt.genSaltSync(10);
 const app = express();
-const port = process.env.PORT || 3000;
-const defaultApiUrl = (process.env.API_URL || 'https://bookit-dijk.onrender.com').replace(/\/$/, '');
+const port = Number(process.env.PORT) || 10000;
+const defaultApiUrl = (process.env.API_URL || `http://localhost:${port}`).replace(/\/$/, '');
 const server = http.createServer(app);
 const io = new SocketIOServer(server, {
   cors: {
@@ -128,43 +160,30 @@ function getAdminFromToken(req, res, next) {
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// CORS configuration - allow localhost for development and Vercel/Render for production
+// CORS configuration - default to local development origins
+const defaultLocalOrigins = [
+  `http://localhost:${port}`,
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:4173',
+  'http://localhost:3000',
+  'http://localhost:8080',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:4173',
+];
+
+const extraOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [...new Set([...defaultLocalOrigins, ...extraOrigins])];
+
 app.use(cors({
   origin(origin, cb) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return cb(null, true);
-    
-    // List of allowed origins
-    const allowedOrigins = [
-      'http://localhost:8080',
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'http://localhost:10000',
-      'https://bookitadmin-a97a31xnx-abhishek-vyas-projects-e9f496ad.vercel.app',
-      'https://bookit-cyan.vercel.app',
-    ];
-    
-    // Allow any vercel.app domain (for Vercel deployments)
-    if (origin && origin.includes('.vercel.app')) {
-      return cb(null, true);
-    }
-    
-    // Allow any onrender.com domain (for Render deployments)
-    if (origin && origin.includes('.onrender.com')) {
-      return cb(null, true);
-    }
-    
-    // Check against static list
-    if (allowedOrigins.includes(origin)) {
-      return cb(null, true);
-    }
-    
-    // Allow in development mode
-    if (process.env.NODE_ENV === 'development') {
-      return cb(null, true);
-    }
-    
-    // Reject in production if not matched
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    if (process.env.NODE_ENV !== 'production') return cb(null, true);
     console.warn(`CORS blocked origin: ${origin}`);
     cb(new Error('Not allowed by CORS'));
   },
@@ -212,31 +231,157 @@ app.post('/upload/images', getUserFromToken, (req, res, next) => {
     }
 
     console.log('Processing files:', req.files.map(f => ({ 
-      name: f.filename, 
+      filename: f.filename,
       path: f.path, 
-      secure_url: f.secure_url 
+      secure_url: f.secure_url,
+      url: f.url
     })));
 
     // Extract Cloudinary URLs from uploaded files
-    // multer-storage-cloudinary stores the URL in the 'path' property
-    const urls = req.files.map(file => file.path || file.secure_url).filter(url => url);
+    // multer-storage-cloudinary v4 stores secure_url in the file object
+    const urls = req.files
+      .map(file => {
+        const url = file.secure_url || file.path || file.url;
+        console.log('Extracted URL from file:', { filename: file.filename, url });
+        return url;
+      })
+      .filter(url => url && typeof url === 'string');
+
+    console.log('Final extracted URLs:', urls);
 
     if (urls.length === 0) {
       console.error('No secure URLs returned from Cloudinary');
       return res.status(500).json({ error: 'Failed to process uploaded files - no URLs returned' });
     }
 
-    console.log('Extracted URLs:', urls);
-
     res.json({ 
       message: 'Images uploaded successfully', 
-      urls 
+      urls,
+      files: req.files.map(f => ({
+        filename: f.filename,
+        url: f.secure_url || f.path || f.url
+      }))
     });
   } catch (err) {
     console.error('Error uploading images:', err);
     res.status(500).json({ error: 'Failed to upload images: ' + (err.message || 'Unknown error') });
   }
 });
+
+// Save uploaded images to a venue (requires auth and ownership)
+app.post('/host/my-requests/:id/add-images', getUserFromToken, async (req, res) => {
+  try {
+    console.log('Add-images request - venueId:', req.params.id, 'body:', JSON.stringify(req.body));
+    
+    const { urls } = req.body || {};
+    if (!urls || !Array.isArray(urls) || urls.length === 0) {
+      console.error('Invalid URLs in add-images request:', urls);
+      return res.status(400).json({ error: 'Image URLs array is required' });
+    }
+
+    console.log('Received URLs to save:', urls);
+
+    const venue = await HostRequest.findOne({ 
+      _id: req.params.id, 
+      submittedByEmail: req.userEmail 
+    });
+    if (!venue) {
+      return res.status(404).json({ error: 'Venue not found or unauthorized' });
+    }
+
+    // Normalize incoming URLs and add to existing images
+    const cleanUrls = normalizeImages(urls);
+    console.log('Normalized URLs:', cleanUrls);
+    
+    const existingImages = Array.isArray(venue.images) ? venue.images : [];
+    console.log('Existing images:', existingImages);
+    
+    venue.images = [...existingImages, ...cleanUrls];
+    console.log('Final images array to save:', venue.images);
+
+    const saved = await venue.save();
+    console.log('Saved venue with images:', saved.images);
+
+    // Sync to public venue if approved
+    try {
+      const publicVenue = await Venue.findOne({ hostRequestId: venue._id });
+      if (publicVenue) {
+        publicVenue.images = venue.images;
+        await publicVenue.save();
+      }
+    } catch (syncErr) {
+      console.warn('Warning syncing to public Venue:', syncErr?.message);
+    }
+
+    // Verify saved data
+    const verified = await HostRequest.findById(req.params.id);
+    console.log('Verified saved images:', verified.images);
+
+    res.json({ 
+      message: 'Images added successfully', 
+      images: verified.images,
+      count: cleanUrls.length
+    });
+  } catch (err) {
+    console.error('Error adding images to venue:', err);
+    res.status(500).json({ error: 'Failed to add images: ' + err.message });
+  }
+});
+
+// Save uploaded images to an event (requires auth and ownership)
+app.post('/host/my-events/:id/add-images', getUserFromToken, async (req, res) => {
+  try {
+    console.log('Add-images request (event) - eventId:', req.params.id, 'body:', JSON.stringify(req.body));
+    
+    const { urls } = req.body || {};
+    if (!urls || !Array.isArray(urls) || urls.length === 0) {
+      console.error('Invalid URLs in add-images request:', urls);
+      return res.status(400).json({ error: 'Image URLs array is required' });
+    }
+
+    console.log('Received URLs to save:', urls);
+
+    const event = await Event.findOne({ 
+      _id: req.params.id, 
+      createdBy: req.userEmail 
+    });
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found or unauthorized' });
+    }
+
+    // Normalize incoming URLs and add to existing images
+    const cleanUrls = normalizeImages(urls);
+    console.log('Normalized URLs:', cleanUrls);
+    
+    const existingImages = Array.isArray(event.images) ? event.images : [];
+    console.log('Existing images:', existingImages);
+    
+    event.images = [...existingImages, ...cleanUrls];
+    console.log('Final images array to save:', event.images);
+
+    // Update cover image if not set
+    if (!event.image && cleanUrls.length > 0) {
+      event.image = cleanUrls[0];
+    }
+
+    const saved = await event.save();
+    console.log('Saved event with images:', saved.images);
+
+    // Verify saved data
+    const verified = await Event.findById(req.params.id);
+    console.log('Verified saved images:', verified.images);
+
+    res.json({ 
+      message: 'Images added successfully', 
+      images: verified.images,
+      coverImage: verified.image,
+      count: cleanUrls.length
+    });
+  } catch (err) {
+    console.error('Error adding images to event:', err);
+    res.status(500).json({ error: 'Failed to add images: ' + err.message });
+  }
+  });
 
 
 
@@ -341,6 +486,57 @@ app.post('/auth/signup', (req, res) => {
     });
 });
 
+// Google OAuth endpoint
+app.post('/auth/google', async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ error: 'Token is required' });
+    }
+
+    // Fetch user info from Google using the access token
+    const userInfoResponse = await fetch(
+      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`
+    );
+    
+    if (!userInfoResponse.ok) {
+      return res.status(401).json({ error: 'Invalid Google token' });
+    }
+
+    const googleUser = await userInfoResponse.json();
+    const { email, name } = googleUser;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email not provided by Google' });
+    }
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+    
+    if (!user) {
+      // Create new user with Google account
+      user = await User.create({
+        name: name || email.split('@')[0],
+        email,
+        password: bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), secretKey) // Random password for Google users
+      });
+    }
+
+    // Create JWT token
+    const jwtSecret = process.env.JWT_SECRET || 'dev-secret';
+    const jwtToken = jwt.sign({ email: user.email }, jwtSecret, { expiresIn: '1d' });
+    
+    return res.json({
+      token: jwtToken,
+      user: { name: user.name, email: user.email },
+      message: 'Logged in with Google successfully'
+    });
+  } catch (err) {
+    console.error('Google auth error:', err);
+    return res.status(500).json({ error: 'Google authentication failed' });
+  }
+});
+
 // Get user profile endpoint
 app.get('/auth/profile', getUserFromToken, async (req, res) => {
   try {
@@ -358,7 +554,8 @@ app.get('/auth/profile', getUserFromToken, async (req, res) => {
         email: user.email,
         phone: user.phone || '',
         location: user.location || '',
-        bio: user.bio || ''
+        bio: user.bio || '',
+        profileImage: user.profileImage || ''
       },
       settings: user.settings || {}
     });
@@ -371,14 +568,19 @@ app.get('/auth/profile', getUserFromToken, async (req, res) => {
 // Update user profile endpoint
 app.put('/auth/profile', getUserFromToken, async (req, res) => {
   try {
-    const { firstName, lastName, phone, location, bio } = req.body;
+    const { firstName, lastName, phone, location, bio, profileImage, profileImageUrl } = req.body;
+    
+    // Extract image from various possible payload keys
+    const imageToSave = profileImage || profileImageUrl || extractImages(req.body)[0];
+    
     const user = await User.findOneAndUpdate(
       { email: req.userEmail },
       {
         name: `${firstName} ${lastName}`.trim(),
         phone,
         location,
-        bio
+        bio,
+        profileImage: imageToSave || undefined
       },
       { new: true }
     );
@@ -394,7 +596,8 @@ app.put('/auth/profile', getUserFromToken, async (req, res) => {
         email: user.email,
         phone: user.phone || '',
         location: user.location || '',
-         bio: user.bio || ''
+        bio: user.bio || '',
+        profileImage: user.profileImage || ''
       },
       message: 'Profile updated successfully'
     });
@@ -513,8 +716,14 @@ app.post('/host/requests', getUserFromToken, async (req, res) => {
       phone,
       address,
       city,
+      mapLink,
       website,
       description,
+      images,
+      imageUrls,
+      urls,
+      photos,
+      pictures
     } = req.body || {};
 
     // Basic validation
@@ -533,8 +742,10 @@ app.post('/host/requests', getUserFromToken, async (req, res) => {
       phone,
       address,
       city,
+      mapLink: mapLink || '',
       website: website || '',
       description,
+      images: extractImages({ images, imageUrls, urls, photos, pictures }),
       status: 'pending',
       submittedByEmail: req.userEmail,
     });
@@ -552,23 +763,27 @@ app.post('/host/requests', getUserFromToken, async (req, res) => {
 // Submit an event registration (requires auth)
 app.post('/host/events', getUserFromToken, async (req, res) => {
   try {
-    const { title, category, location, date, startTime, endTime, description, capacity, price, image } = req.body;
+    const { title, category, location, mapLink, date, startTime, endTime, description, capacity, price, image, images, imageUrls, urls, photos, pictures } = req.body;
     
     if (!title || !category || !location || !date || !description) {
       return res.status(400).json({ error: 'Missing required event fields' });
     }
 
+    const incomingImages = extractImages({ images, imageUrls, urls, photos, pictures });
+
     const event = new Event({
       title,
       category,
       location,
+      mapLink: mapLink || '',
       date,
       startTime: startTime || '',
       endTime: endTime || '',
       description,
       capacity: capacity ? parseInt(capacity) : 0,
       price: price ? parseFloat(price) : 0,
-      image: image || '',
+      image: incomingImages[0] || image || '',
+      images: incomingImages,
       status: 'pending',
       createdBy: req.userEmail
     });
@@ -655,13 +870,13 @@ app.put('/host/my-requests/:id', getUserFromToken, async (req, res) => {
     // Update allowed fields (seats handled with merge below)
     const allowedFields = [
       'venueName', 'businessType', 'contactPerson', 'email', 'phone',
-      'address', 'city', 'website', 'description', 'capacity', 
+      'address', 'city', 'mapLink', 'website', 'description', 'capacity', 
       'amenities', 'pricePerHour', 'images', 'availabilitySlots'
     ];
     
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) {
-        venue[field] = req.body[field];
+        venue[field] = field === 'images' ? extractImages(req.body) : req.body[field];
       }
     });
 
@@ -695,6 +910,9 @@ app.put('/host/my-requests/:id', getUserFromToken, async (req, res) => {
 
         venue.seats = mergedSeats;
         publicVenue.seats = mergedSeats;
+
+        // Keep mapLink in sync as well
+        publicVenue.mapLink = venue.mapLink || publicVenue.mapLink || '';
 
         await publicVenue.save();
       } else {
@@ -795,14 +1013,14 @@ app.put('/host/my-events/:id', getUserFromToken, async (req, res) => {
 
     // Update allowed fields
     const allowedFields = [
-      'title', 'category', 'location', 'date', 'startTime', 'endTime',
+      'title', 'category', 'location', 'mapLink', 'date', 'startTime', 'endTime',
       'description', 'capacity', 'price', 'ticketsAvailable', 'venue',
       'amenities', 'images'
     ];
     
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) {
-        event[field] = req.body[field];
+        event[field] = field === 'images' ? extractImages(req.body) : req.body[field];
       }
     });
 
@@ -942,6 +1160,7 @@ app.put('/admin/host/requests/:id/status', getAdminFromToken, async (req, res) =
           phone: doc.phone,
           address: doc.address,
           city: doc.city,
+          mapLink: doc.mapLink || '',
           website: doc.website,
           description: doc.description,
           status: doc.status,

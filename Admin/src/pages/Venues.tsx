@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import { Building2, Trash2, Calendar, MapPin, Zap, Users, DollarSign, X } from "lucide-react";
+import { API_URL } from "@/lib/api";
 
 type Venue = {
   _id: string;
@@ -52,20 +53,21 @@ const Venues = () => {
   } | null>(null);
 
   const adminToken = localStorage.getItem("adminToken") || "";
+  const apiBase = API_URL;
 
   async function load() {
     setLoading(true);
     setError("");
     try {
       // Fetch venues
-      const venuesResp = await axios.get<Venue[]>("https://bookit-dijk.onrender.com/admin/host/requests", {
+      const venuesResp = await axios.get<Venue[]>(`${apiBase}/admin/host/requests`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       const approved = (venuesResp.data || []).filter((r) => r.status === "approved");
       setVenues(approved);
 
       // Fetch events
-      const eventsResp = await axios.get<Event[]>("https://bookit-dijk.onrender.com/admin/events", {
+      const eventsResp = await axios.get<Event[]>(`${apiBase}/admin/events`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       const approvedEvents = (eventsResp.data || []).filter((e) => e.status === "approved");
@@ -96,7 +98,7 @@ const Venues = () => {
   async function deleteVenue(id: string) {
     if (!window.confirm("Delete this venue? This action cannot be undone.")) return;
     try {
-      await axios.delete(`https://bookit-dijk.onrender.com/admin/host/requests/${id}`, {
+      await axios.delete(`${apiBase}/admin/host/requests/${id}`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       setVenues((prev) => prev.filter((v) => v._id !== id));
@@ -109,7 +111,7 @@ const Venues = () => {
   async function deleteEvent(id: string) {
     if (!window.confirm("Delete this event? This action cannot be undone.")) return;
     try {
-      await axios.delete(`https://bookit-dijk.onrender.com/admin/events/${id}`, {
+      await axios.delete(`${apiBase}/admin/events/${id}`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       setEvents((prev) => prev.filter((e) => e._id !== id));

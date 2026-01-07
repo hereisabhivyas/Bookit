@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { io as ioClient, Socket } from "socket.io-client";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, Users, Lock, Globe, Settings, Trash2, LogOut, Edit2, UserMinus, Shield, Plus, Check, X } from "lucide-react";
@@ -37,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { API_URL } from "@/lib/api";
 
 interface Message {
   _id: string;
@@ -75,9 +76,12 @@ interface Member {
   joinedAt: string;
 }
 
+const apiBase = API_URL;
+
 const CommunityChat = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [community, setCommunity] = useState<Community | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -104,6 +108,8 @@ const CommunityChat = () => {
     requireApproval: false,
     allowMemberInvites: true,
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -111,9 +117,50 @@ const CommunityChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Membership flags must be defined before effects that reference them
+  const currentUserEmail = localStorage.getItem('userEmail');
+  const isAdmin = community?.createdBy === currentUserEmail;
+  const isMember = community?.membership?.status === 'active';
+  const isPending = community?.membership?.status === 'pending';
+
   useEffect(() => {
     fetchCommunityData();
   }, [id]);
+
+  // Auto-join support via invite link query param
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const shouldJoin = params.get('join');
+    const token = localStorage.getItem('token');
+    if (!id || !token) return;
+    if (shouldJoin === 'true') {
+      // If user is not yet a member, attempt to join directly
+      if (!isMember) {
+        (async () => {
+          try {
+            const resp = await fetch(`${apiBase}/api/communities/${id}/join`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+            if (resp.ok) {
+              const data = await resp.json();
+              toast({
+                title: 'Join Request Submitted',
+                description: data.message || 'You will be added or approved shortly.',
+              });
+              // Refresh community data to reflect membership status
+              fetchCommunityData();
+            } else {
+              const data = await resp.json();
+              toast({ title: 'Join Failed', description: data.error || 'Unable to join community.', variant: 'destructive' });
+            }
+          } catch (e: any) {
+            toast({ title: 'Error', description: e?.message || 'Unable to join community.', variant: 'destructive' });
+          }
+        })();
+      }
+    }
+  }, [id, location.search, isMember]);
 
   useEffect(() => {
     scrollToBottom();
@@ -132,7 +179,7 @@ const CommunityChat = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!id || !token) return;
-    const s = ioClient('https://bookit-dijk.onrender.com', {
+    const s = ioClient(apiBase, {
       transports: ['websocket'],
       withCredentials: true,
     });
@@ -195,10 +242,10 @@ const CommunityChat = () => {
 
     try {
       const [communityRes, messagesRes] = await Promise.all([
-        fetch(`https://bookit-dijk.onrender.com/api/communities/${id}`, {
+        fetch(`${apiBase}/api/communities/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/messages`, {
+        fetch(`${apiBase}/api/communities/${id}/messages`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);
@@ -242,7 +289,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/members`, {
+      const response = await fetch(`${apiBase}/api/communities/${id}/members`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -260,7 +307,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/pending-requests`, {
+      const response = await fetch(`${apiBase}/api/communities/${id}/pending-requests`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -278,7 +325,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/leave`, {
+      const response = await fetch(`${apiBase}/api/communities/${id}/leave`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -308,7 +355,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}`, {
+      const response = await fetch(`${apiBase}/api/communities/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -338,7 +385,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/members/${encodeURIComponent(memberEmail)}`, {
+      const response = await fetch(`${apiBase}/api/communities/${id}/members/${encodeURIComponent(memberEmail)}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -368,7 +415,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/requests/${encodeURIComponent(memberEmail)}/approve`, {
+      const response = await fetch(`${apiBase}/api/communities/${id}/requests/${encodeURIComponent(memberEmail)}/approve`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -399,7 +446,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/requests/${encodeURIComponent(memberEmail)}/reject`, {
+      const response = await fetch(`${apiBase}/api/communities/${id}/requests/${encodeURIComponent(memberEmail)}/reject`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -429,7 +476,7 @@ const CommunityChat = () => {
 
     setAddingMember(true);
     try {
-      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/add-member`, {
+      const response = await fetch(`${apiBase}/api/communities/${id}/add-member`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -470,7 +517,7 @@ const CommunityChat = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}`, {
+      const response = await fetch(`${apiBase}/api/communities/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -500,6 +547,36 @@ const CommunityChat = () => {
     }
   };
 
+  const handleUploadIcon = async () => {
+    if (!logoFile) return;
+    setUploadingLogo(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Not authenticated');
+      const formData = new FormData();
+      formData.append('images', logoFile);
+      const resp = await fetch(`${apiBase}/upload/images`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      });
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to upload logo');
+      }
+      const data = await resp.json();
+      const url = data?.urls?.[0];
+      if (!url) throw new Error('No logo URL returned');
+      setEditFormData(prev => ({ ...prev, icon: url }));
+      setLogoFile(null);
+      toast({ title: 'Logo uploaded', description: 'Logo has been set for this community.' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e?.message || 'Unable to upload logo', variant: 'destructive' });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
@@ -509,7 +586,7 @@ const CommunityChat = () => {
 
     setSending(true);
     try {
-      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/messages`, {
+      const response = await fetch(`${apiBase}/api/communities/${id}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -569,10 +646,7 @@ const CommunityChat = () => {
       .slice(0, 2);
   };
 
-  const currentUserEmail = localStorage.getItem('userEmail');
-  const isAdmin = community?.createdBy === currentUserEmail;
-  const isMember = community?.membership?.status === 'active';
-  const isPending = community?.membership?.status === 'pending';
+  
 
   const emojiOptions = ["👥", "🎵", "💻", "🎨", "🏀", "🍔", "🎭", "📚", "🎮", "✈️", "💪", "🎬"];
 
@@ -615,7 +689,11 @@ const CommunityChat = () => {
                 Back
               </Button>
               <div className="flex items-center gap-3">
-                <div className="text-3xl">{community.icon}</div>
+                {community.icon && (community.icon.startsWith('http') || community.icon.startsWith('data:')) ? (
+                  <img src={community.icon} alt="Community Logo" className="w-10 h-10 rounded object-cover border" />
+                ) : (
+                  <div className="text-3xl">{community.icon || '👥'}</div>
+                )}
                 <div>
                   <h1 className="text-xl font-bold flex items-center gap-2">
                     {community.name}
@@ -791,7 +869,11 @@ const CommunityChat = () => {
                 <>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                      <div className="text-4xl">{community.icon}</div>
+                      {community.icon && (community.icon.startsWith('http') || community.icon.startsWith('data:')) ? (
+                        <img src={community.icon} alt="Community Logo" className="w-12 h-12 rounded object-cover border" />
+                      ) : (
+                        <div className="text-4xl">{community.icon || '👥'}</div>
+                      )}
                       <div className="flex-1">
                         <h3 className="text-xl font-bold">{community.name}</h3>
                         <p className="text-sm text-muted-foreground">{community.category}</p>
@@ -824,6 +906,34 @@ const CommunityChat = () => {
                           <span className="text-sm">{community.members} members</span>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Direct Join Link */}
+                    <div className="space-y-2">
+                      <Label>Direct Join Link</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          readOnly
+                          value={`${window.location.origin}/communities/${community._id}?join=true`}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigator.clipboard.writeText(`${window.location.origin}/communities/${community._id}?join=true`).then(() => {
+                            toast({ title: 'Copied', description: 'Invite link copied to clipboard.' });
+                          })}
+                        >
+                          Copy
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(`${window.location.origin}/communities/${community._id}?join=true`, '_blank')}
+                        >
+                          Open
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Share this link for users to join directly. If the community requires approval, their request will be marked pending.</p>
                     </div>
 
                     <div className="space-y-2">
@@ -886,23 +996,22 @@ const CommunityChat = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Icon</Label>
-                    <div className="grid grid-cols-6 gap-2">
-                      {emojiOptions.map((emoji) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          onClick={() => setEditFormData({ ...editFormData, icon: emoji })}
-                          className={`p-3 text-2xl rounded-lg border-2 transition-all hover:scale-110 ${
-                            editFormData.icon === emoji
-                              ? 'border-primary bg-primary/10'
-                              : 'border-border bg-muted/50'
-                          }`}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
+                    <Label>Logo</Label>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {editFormData.icon && (editFormData.icon.startsWith('http') || editFormData.icon.startsWith('data:')) ? (
+                        <img src={editFormData.icon} alt="Logo Preview" className="w-16 h-16 rounded object-cover border" />
+                      ) : (
+                        <div className="w-16 h-16 rounded bg-muted flex items-center justify-center text-2xl">{editFormData.icon || '👥'}</div>
+                      )}
+                      <Input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} className="max-w-xs" />
+                      <Button variant="outline" size="sm" onClick={handleUploadIcon} disabled={!logoFile || uploadingLogo}>
+                        {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                      </Button>
+                      {editFormData.icon && (editFormData.icon.startsWith('http') || editFormData.icon.startsWith('data:')) && (
+                        <Button variant="ghost" size="sm" onClick={() => setEditFormData({ ...editFormData, icon: '' })}>Remove</Button>
+                      )}
                     </div>
+                    <p className="text-xs text-muted-foreground">Upload a square image to use as your community logo.</p>
                   </div>
 
                   <div className="space-y-2">

@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Switch } from "@/components/ui/switch";
 import { Search, Calendar, MapPin, SlidersHorizontal, Building2, Clock } from "lucide-react";
 import { categories } from "@/data/mockData";
+import { API_URL } from "@/lib/api";
 
 interface Event {
   _id: string;
@@ -59,8 +60,8 @@ const Events = () => {
       setError("");
       try {
         const [eventsRes, venuesRes] = await Promise.all([
-          axios.get<Event[]>("https://bookit-dijk.onrender.com/api/events"),
-          axios.get<Venue[]>("https://bookit-dijk.onrender.com/api/venues"),
+          axios.get<Event[]>(`${API_URL}/api/events`),
+          axios.get<Venue[]>(`${API_URL}/api/venues`),
         ]);
         setEvents(eventsRes.data || []);
         setVenues(venuesRes.data || []);

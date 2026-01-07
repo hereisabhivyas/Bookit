@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Lock, Mail } from "lucide-react";
+import { API_URL } from "@/lib/api";
 
 interface AdminLoginProps {
   setIsAuthenticated: (value: boolean) => void;
@@ -20,7 +21,7 @@ const AdminLogin = ({ setIsAuthenticated }: AdminLoginProps) => {
     setLoading(true);
 
     try {
-      const resp = await axios.post("https://bookit-dijk.onrender.com/admin/login", {
+      const resp = await axios.post(`${API_URL}/admin/login`, {
         email,
         password,
       });

@@ -15,6 +15,7 @@ interface EventDetail {
   category: string;
   date: string;
   location: string;
+  mapLink?: string;
   price?: number;
   image?: string;
   images?: string[];
@@ -138,6 +139,20 @@ const EventBooking = () => {
               Book Tickets for {event?.title}
             </h1>
             <p className="text-muted-foreground">{event?.category} • {event?.location}</p>
+            <div className="mt-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const url = event?.mapLink || (event?.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}` : '');
+                  if (!url) return;
+                  window.open(url, '_blank');
+                }}
+              >
+                See on maps
+              </Button>
+            </div>
           </div>
 
           {success && (
@@ -232,7 +247,7 @@ const EventBooking = () => {
                   {refreshing ? "Refreshing..." : "Refresh"}
                 </Button>
                 {unitPrice > 0 && (
-                  <span className="text-sm px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/30">${unitPrice.toFixed(2)} per ticket</span>
+                  <span className="text-sm px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/30">₹{unitPrice.toFixed(2)} per ticket</span>
                 )}
               </div>
             </div>
@@ -261,7 +276,7 @@ const EventBooking = () => {
               </div>
               <div className="space-y-2">
                 <Label>Total</Label>
-                <Input readOnly value={`$${totalPrice.toFixed(2)}`} />
+                <Input readOnly value={`₹${totalPrice.toFixed(2)}`} />
               </div>
             </div>
 

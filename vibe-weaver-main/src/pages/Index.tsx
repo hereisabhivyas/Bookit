@@ -16,6 +16,7 @@ import {
 import { ArrowRight, Sparkles, User, Search, MapPin, Calendar, Filter, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { API_URL } from "@/lib/api";
 
 interface Category {
   _id?: string;
@@ -92,7 +93,7 @@ const Index = () => {
         return;
       }
       try {
-        const res = await fetch('https://bookit-dijk.onrender.com/auth/profile', {
+        const res = await fetch(`${API_URL}/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -112,9 +113,9 @@ const Index = () => {
       try {
         setError("");
         const [venuesRes, eventsRes, communitiesRes] = await Promise.all([
-          fetch('https://bookit-dijk.onrender.com/api/venues'),
-          fetch('https://bookit-dijk.onrender.com/api/events'),
-          fetch('https://bookit-dijk.onrender.com/api/communities')
+          fetch(`${API_URL}/api/venues`),
+          fetch(`${API_URL}/api/events`),
+          fetch(`${API_URL}/api/communities`)
         ]);
 
         const venuesData = await venuesRes.json();

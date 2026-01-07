@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { API_URL } from "@/lib/api";
 
 interface CommunityCardProps {
   id: string;
@@ -52,7 +53,7 @@ const CommunityCard = ({
 
     setJoining(true);
     try {
-      const response = await fetch(`https://bookit-dijk.onrender.com/api/communities/${id}/join`, {
+      const response = await fetch(`${API_URL}/api/communities/${id}/join`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -90,8 +91,16 @@ const CommunityCard = ({
     >
       {/* Header */}
       <div className="relative h-32 bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20 flex items-center justify-center">
-        <div className="w-20 h-20 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center text-4xl border-2 border-border/50 group-hover:border-primary/50 transition-colors">
-          {icon}
+        <div className="w-20 h-20 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center text-4xl border-2 border-border/50 group-hover:border-primary/50 transition-colors overflow-hidden">
+          {icon && (icon.startsWith('http') || icon.startsWith('data:')) ? (
+            <img 
+              src={icon} 
+              alt={name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            icon || '👥'
+          )}
         </div>
         {badge && (
           <Badge

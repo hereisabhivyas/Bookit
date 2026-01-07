@@ -23,8 +23,10 @@ import ShippingPolicy from "./pages/ShippingPolicy";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 import axios from "axios";
+import { API_URL } from "./lib/api";
 
-axios.defaults.baseURL = 'https://bookit-dijk.onrender.com';
+axios.defaults.baseURL = API_URL;
+axios.defaults.withCredentials = true;
 
 
 

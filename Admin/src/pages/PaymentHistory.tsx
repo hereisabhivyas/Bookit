@@ -13,8 +13,7 @@ import {
   Mail,
   AlertCircle,
 } from "lucide-react";
-
-const API_URL = "https://bookit-dijk.onrender.com";
+import { API_URL } from "@/lib/api";
 
 type PaymentStatus = "captured" | "paid" | "created" | "failed" | "pending" | "refunded" | string;
 

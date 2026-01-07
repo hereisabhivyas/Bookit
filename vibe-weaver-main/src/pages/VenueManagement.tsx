@@ -28,8 +28,10 @@ import {
   ArrowLeft,
   Armchair,
 } from "lucide-react";
+import { API_URL } from "@/lib/api";
 
 const VenueManagement = () => {
+  const apiBase = API_URL;
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -47,6 +49,7 @@ const VenueManagement = () => {
     phone: "",
     address: "",
     city: "",
+    mapLink: "",
     website: "",
     description: "",
     capacity: 0,
@@ -124,7 +127,7 @@ const VenueManagement = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const resp = await axios.get(`https://bookit-dijk.onrender.com/host/my-requests/${id}`, {
+      const resp = await axios.get(`${apiBase}/host/my-requests/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -137,6 +140,7 @@ const VenueManagement = () => {
           phone: resp.data.phone || "",
           address: resp.data.address || "",
           city: resp.data.city || "",
+          mapLink: resp.data.mapLink || "",
           website: resp.data.website || "",
           description: resp.data.description || "",
           capacity: resp.data.capacity || 0,
@@ -291,7 +295,7 @@ const VenueManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const resp = await axios.post(
-        `https://bookit-dijk.onrender.com/host/my-requests/${id}/seats/${selectedSeat}/bookings`,
+        `${apiBase}/host/my-requests/${id}/seats/${selectedSeat}/bookings`,
         { date: seatBooking.date, startTime: seatBooking.startTime, hours: seatBooking.hours },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -313,7 +317,7 @@ const VenueManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const resp = await axios.delete(
-        `https://bookit-dijk.onrender.com/host/my-requests/${id}/seats/${seatId}/bookings/${bookingIndex}`,
+        `${apiBase}/host/my-requests/${id}/seats/${seatId}/bookings/${bookingIndex}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       // Re-fetch to sync UI and ensure upcoming list reflects deletion
@@ -346,7 +350,7 @@ const VenueManagement = () => {
       }
 
       const resp = await axios.post(
-        `https://bookit-dijk.onrender.com/upload/images`,
+        `${apiBase}/upload/images`,
         formData,
         {
           headers: {
@@ -382,7 +386,7 @@ const VenueManagement = () => {
       const imgUrl = venueData.images[index];
       if (!imgUrl) return;
       const token = localStorage.getItem("token");
-      await axios.delete(`https://bookit-dijk.onrender.com/host/my-requests/${id}/images`, {
+      await axios.delete(`${apiBase}/host/my-requests/${id}/images`, {
         headers: { Authorization: `Bearer ${token}` },
         data: { url: imgUrl },
       });
@@ -407,7 +411,7 @@ const VenueManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const resp = await axios.put(
-        `https://bookit-dijk.onrender.com/host/my-requests/${id}`,
+        `${apiBase}/host/my-requests/${id}`,
         { ...venueData, seats },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -428,7 +432,7 @@ const VenueManagement = () => {
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`https://bookit-dijk.onrender.com/host/my-requests/${id}`, {
+      await axios.delete(`${apiBase}/host/my-requests/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       navigate("/profile");
@@ -552,6 +556,39 @@ const VenueManagement = () => {
                     onChange={(e) => handleInputChange("address", e.target.value)}
                     placeholder="Full address"
                   />
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (!navigator.geolocation) {
+                          setError("Geolocation not supported");
+                          setTimeout(() => setError(""), 3000);
+                          return;
+                        }
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            const { latitude, longitude } = pos.coords;
+                            const link = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+                            handleInputChange("mapLink", link);
+                          },
+                          (err) => {
+                            setError(err?.message || "Failed to get location");
+                            setTimeout(() => setError(""), 3000);
+                          },
+                          { enableHighAccuracy: true, timeout: 10000 }
+                        );
+                      }}
+                    >
+                      Use my location
+                    </Button>
+                    {venueData.mapLink && (
+                      <a href={venueData.mapLink} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                        Preview on Maps
+                      </a>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="website">Website</Label>
@@ -573,7 +610,7 @@ const VenueManagement = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="pricePerHour">Price Per Hour ($)</Label>
+                  <Label htmlFor="pricePerHour">Price Per Hour (₹)</Label>
                   <Input
                     id="pricePerHour"
                     type="number"
@@ -734,7 +771,7 @@ const VenueManagement = () => {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <div>
-                      <p className="text-sm font-medium text-blue-900">Base Price Per Hour: ${venueData.pricePerHour}</p>
+                      <p className="text-sm font-medium text-blue-900">Base Price Per Hour: ₹{venueData.pricePerHour}</p>
                       <p className="text-xs text-blue-700">You can set different prices for individual seats below</p>
                     </div>
                     <Button 
@@ -781,7 +818,7 @@ const VenueManagement = () => {
                           className="text-xs"
                         />
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">$/hr:</span>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">₹/hr:</span>
                           <Input
                             type="number"
                             placeholder="Price/hour"

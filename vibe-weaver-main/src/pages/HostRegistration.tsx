@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, Building2, MapPin, Phone, Mail, Globe, FileText, Clock } from "lucide-react";
 import axios from "axios";
+import { API_URL } from "@/lib/api";
 
 const venueTypes = [
   "Restaurant",
@@ -33,6 +34,8 @@ const venueTypes = [
   "Private Estate",
   "Other",
 ];
+
+const apiBase = API_URL;
 
 const HostRegistration = () => {
   const navigate = useNavigate();
@@ -77,6 +80,7 @@ const HostRegistration = () => {
     phone: "",
     address: "",
     city: "",
+    mapLink: "",
     website: "",
     description: "",
   });
@@ -84,9 +88,12 @@ const HostRegistration = () => {
     title: "",
     category: "",
     location: "",
+    mapLink: "",
     date: "",
     startTime: "",
     endTime: "",
+    durationHours: 1,
+    durationMinutes: 0,
     description: "",
     capacity: "",
     price: "",
@@ -107,6 +114,24 @@ const HostRegistration = () => {
     setEventData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const getCurrentLocationLink = async (onLink: (url: string) => void) => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by this browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const link = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+        onLink(link);
+      },
+      (err) => {
+        alert(err?.message || "Failed to get current location");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const handleEventDateChange = (value: string) => {
     if (!value) return;
     setEventData((prev) => {
@@ -123,17 +148,25 @@ const HostRegistration = () => {
     setEventData((prev) => {
       const minStart = prev.date === todayDate ? currentTime : '00:00';
       const safeStart = candidate < minStart ? minStart : candidate;
-      const safeEnd = prev.endTime && prev.endTime < safeStart ? safeStart : (prev.endTime || safeStart);
+      // Recalculate endTime based on new startTime + duration
+      const [sh, sm] = safeStart.split(':').map(Number);
+      const totalMins = sh * 60 + sm + (prev.durationHours * 60) + prev.durationMinutes;
+      const eh = Math.floor(totalMins / 60) % 24;
+      const em = totalMins % 60;
+      const safeEnd = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
       return { ...prev, startTime: safeStart, endTime: safeEnd };
     });
   };
 
-  const updateEventEndTime = (hour: string, minute: string, ampm: string) => {
-    const candidate = to24Hour(hour, minute, ampm);
+  const updateEventDuration = (hours: number, minutes: number) => {
     setEventData((prev) => {
-      const minEnd = prev.startTime || (prev.date === todayDate ? currentTime : '00:00');
-      const safeEnd = candidate < minEnd ? minEnd : candidate;
-      return { ...prev, endTime: safeEnd };
+      // Recalculate endTime based on startTime + new duration
+      const [sh, sm] = (prev.startTime || currentTime).split(':').map(Number);
+      const totalMins = sh * 60 + sm + (hours * 60) + minutes;
+      const eh = Math.floor(totalMins / 60) % 24;
+      const em = totalMins % 60;
+      const safeEnd = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+      return { ...prev, durationHours: hours, durationMinutes: minutes, endTime: safeEnd };
     });
   };
 
@@ -150,7 +183,7 @@ const HostRegistration = () => {
 
       if (registrationType === "venue") {
         await axios.post(
-          "https://bookit-dijk.onrender.com/host/requests",
+          `${apiBase}/host/requests`,
           {
             venueName: venueData.venueName,
             businessType: venueData.businessType,
@@ -159,6 +192,7 @@ const HostRegistration = () => {
             phone: venueData.phone,
             address: venueData.address,
             city: venueData.city,
+            mapLink: venueData.mapLink,
             website: venueData.website,
             description: venueData.description,
           },
@@ -167,11 +201,12 @@ const HostRegistration = () => {
         alert("Venue registration submitted! We'll review your application and get back to you soon.");
       } else {
         await axios.post(
-          "https://bookit-dijk.onrender.com/host/events",
+          `${apiBase}/host/events`,
           {
             title: eventData.title,
             category: eventData.category,
             location: eventData.location,
+            mapLink: eventData.mapLink,
             date: eventData.date,
             startTime: eventData.startTime,
             endTime: eventData.endTime,
@@ -363,6 +398,21 @@ const HostRegistration = () => {
                       placeholder="123 Main Street"
                       required
                     />
+                    <div className="flex items-center gap-2 mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => getCurrentLocationLink((url) => setVenueData(prev => ({ ...prev, mapLink: url })))}
+                      >
+                        Use my location
+                      </Button>
+                      {venueData.mapLink && (
+                        <a href={venueData.mapLink} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                          Preview on Maps
+                        </a>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -438,6 +488,21 @@ const HostRegistration = () => {
                       placeholder="City, venue name, or address"
                       required
                     />
+                    <div className="flex items-center gap-2 mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => getCurrentLocationLink((url) => setEventData(prev => ({ ...prev, mapLink: url })))}
+                      >
+                        Use my location
+                      </Button>
+                      {eventData.mapLink && (
+                        <a href={eventData.mapLink} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                          Preview on Maps
+                        </a>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-6">
@@ -527,50 +592,38 @@ const HostRegistration = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="eventEndTime" className="flex items-center gap-2">
-                        <span>End Time</span>
-                        <span className="text-xs text-muted-foreground">After start</span>
+                      <Label htmlFor="eventDuration" className="flex items-center gap-2">
+                        <span>Event Duration</span>
+                        <span className="text-xs text-muted-foreground">Hours and minutes</span>
                       </Label>
                       <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3 bg-muted/40">
                         <Clock className="w-4 h-4 text-muted-foreground" />
                         <select
                           className="rounded-md border px-2 py-1 bg-background"
-                          value={endParts.hour}
-                          onChange={(e) => updateEventEndTime(e.target.value, endParts.minute, endParts.ampm)}
+                          value={eventData.durationHours}
+                          onChange={(e) => updateEventDuration(parseInt(e.target.value) || 0, eventData.durationMinutes)}
                         >
-                          {hourOptions.map((h) => (
-                            <option key={h} value={h}>{h}</option>
+                          {Array.from({ length: 24 }, (_, i) => i).map((h) => (
+                            <option key={h} value={h}>{String(h).padStart(2, '0')} hour{h !== 1 ? 's' : ''}</option>
                           ))}
                         </select>
-                        <span className="text-sm text-muted-foreground">:</span>
+                        <span className="text-sm text-muted-foreground">+</span>
                         <select
                           className="rounded-md border px-2 py-1 bg-background"
-                          value={endParts.minute}
-                          onChange={(e) => updateEventEndTime(endParts.hour, e.target.value, endParts.ampm)}
+                          value={eventData.durationMinutes}
+                          onChange={(e) => updateEventDuration(eventData.durationHours, parseInt(e.target.value) || 0)}
                         >
                           {minuteOptions.map((m) => (
-                            <option key={m} value={m}>{m}</option>
+                            <option key={m} value={m}>{m} min</option>
                           ))}
-                        </select>
-                        <select
-                          className="rounded-md border px-2 py-1 bg-background"
-                          value={endParts.ampm}
-                          onChange={(e) => updateEventEndTime(endParts.hour, endParts.minute, e.target.value)}
-                        >
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
                         </select>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            const baseline = eventData.startTime || currentTime;
-                            const bumped = to12HourParts(baseline);
-                            updateEventEndTime(bumped.hour, bumped.minute, bumped.ampm);
-                          }}
+                          onClick={() => updateEventDuration(1, 0)}
                         >
-                          Align with start
+                          1 hour
                         </Button>
                       </div>
                     </div>

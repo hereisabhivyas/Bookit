@@ -28,6 +28,7 @@ interface VenueDetail {
   businessType: string;
   city: string;
   address?: string;
+  mapLink?: string;
   website?: string;
   description: string;
   capacity: number;
@@ -266,6 +267,20 @@ const VenueBooking = () => {
             </h1>
             <p className="text-muted-foreground">{venue?.businessType} • {venue?.city}</p>
             {venue?.address && <p className="text-xs text-muted-foreground mt-1">📍 {venue.address}</p>}
+            <div className="mt-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const url = venue?.mapLink || (venue?.address || venue?.city ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue?.address || venue?.city || '')}` : '');
+                  if (!url) return;
+                  window.open(url, '_blank');
+                }}
+              >
+                See on maps
+              </Button>
+            </div>
           </div>
 
           {success && (
@@ -410,7 +425,7 @@ const VenueBooking = () => {
                 </Button>
                 {venue?.pricePerHour !== undefined && venue.pricePerHour > 0 && (
                   <span className="text-sm px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/30">
-                    Base price: ${venue.pricePerHour.toFixed(2)}/hr
+                    Base price: ₹{venue.pricePerHour.toFixed(2)}/hr
                   </span>
                 )}
               </div>
@@ -463,7 +478,7 @@ const VenueBooking = () => {
                             <span className="text-xs font-semibold">Seat {seat.id}</span>
                             {seat.label && <span className="text-[10px] text-muted-foreground">{seat.label}</span>}
                             <span className="text-[10px] font-medium text-green-700">
-                              ${(seat.price ?? venue.pricePerHour ?? 0).toFixed(2)}/hr
+                              ₹{(seat.price ?? venue.pricePerHour ?? 0).toFixed(2)}/hr
                             </span>
                             {hasBookings && (
                               <span className="text-[10px] bg-orange-600 text-white px-2 py-0.5 rounded-full">Booked</span>
@@ -502,7 +517,7 @@ const VenueBooking = () => {
 
           {/* Bottom CTA */}
           <div className="mt-6 flex items-center justify-between">
-            <div className="text-lg font-bold">Total: ${totalPrice.toFixed(2)}</div>
+            <div className="text-lg font-bold">Total: ₹{totalPrice.toFixed(2)}</div>
             <Button onClick={proceedToPayment} className="bg-gradient-to-r from-primary to-secondary">
               Confirm Booking
             </Button>

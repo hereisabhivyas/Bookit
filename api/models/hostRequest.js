@@ -11,6 +11,7 @@ const hostRequestSchema = new Schema(
     phone: { type: String, required: true },
     address: { type: String, required: true },
     city: { type: String, required: true },
+    mapLink: { type: String, default: '' },
     website: { type: String, default: '' },
     description: { type: String, required: true },
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },

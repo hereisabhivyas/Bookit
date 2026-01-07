@@ -34,8 +34,10 @@ import {
   Calendar,
   Receipt,
 } from "lucide-react";
+import { API_URL } from "@/lib/api";
 
 const Profile = () => {
+  const apiBase = API_URL;
   const navigate = useNavigate();
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -64,7 +66,10 @@ const Profile = () => {
     phone: "",
     location: "",
     bio: "",
+    profileImage: "",
   });
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [uploadingProfileImage, setUploadingProfileImage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -89,7 +94,7 @@ const Profile = () => {
           setLoading(false);
           return;
         }
-        const resp = await axios.get("https://bookit-dijk.onrender.com/auth/profile", {
+        const resp = await axios.get(`${apiBase}/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (resp.data && resp.data.user) {
@@ -103,10 +108,10 @@ const Profile = () => {
 
         // Fetch user's approved venues and events
         try {
-          const venuesResp = await axios.get("https://bookit-dijk.onrender.com/host/my-requests", {
+          const venuesResp = await axios.get(`${apiBase}/host/my-requests`, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          const eventsResp = await axios.get("https://bookit-dijk.onrender.com/host/my-events", {
+          const eventsResp = await axios.get(`${apiBase}/host/my-events`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           
@@ -143,7 +148,7 @@ const Profile = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const resp = await axios.put("https://bookit-dijk.onrender.com/auth/profile", profileData, {
+      const resp = await axios.put(`${apiBase}/auth/profile`, profileData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (resp.data) {
@@ -157,12 +162,58 @@ const Profile = () => {
     }
   };
 
+  const handleUploadProfilePhoto = async () => {
+    if (!profileImageFile) {
+      setError("Please select a photo to upload");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+    setUploadingProfileImage(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("images", profileImageFile);
+
+      const uploadResp = await axios.post(
+        `${apiBase}/upload/images`,
+        formData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const url = uploadResp?.data?.urls?.[0];
+      if (!url) {
+        throw new Error("Upload succeeded but no image URL returned");
+      }
+
+      const saveResp = await axios.put(
+        `${apiBase}/auth/profile`,
+        { profileImage: url },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (saveResp.data) {
+        setProfileData((prev) => ({ ...prev, profileImage: url }));
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+        setProfileImageFile(null);
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.error || err?.message || "Failed to upload profile photo");
+      setTimeout(() => setError(""), 4000);
+    } finally {
+      setUploadingProfileImage(false);
+    }
+  };
+
   const handleSaveSettings = async () => {
     setSaving(true);
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const resp = await axios.put("https://bookit-dijk.onrender.com/auth/settings", settings, {
+      const resp = await axios.put(`${apiBase}/auth/settings`, settings, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (resp.data) {
@@ -194,7 +245,7 @@ const Profile = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        "https://bookit-dijk.onrender.com/auth/password",
+        `${apiBase}/auth/password`,
         {
           currentPassword: passwordForm.currentPassword,
           newPassword: passwordForm.newPassword,
@@ -228,7 +279,7 @@ const Profile = () => {
     setDeleting(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.delete("https://bookit-dijk.onrender.com/auth/account", {
+      await axios.delete(`${apiBase}/auth/account`, {
         headers: { Authorization: `Bearer ${token}` },
         data: { password: deletePassword },
       });
@@ -337,19 +388,40 @@ const Profile = () => {
                 <div className="space-y-6">
                   {/* Avatar Section */}
                   <div className="flex items-center gap-6">
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                      <span className="text-3xl font-bold text-white">
-                        {profileData.firstName?.[0] || ""}
-                        {profileData.lastName?.[0] || ""}
-                      </span>
-                    </div>
+                    {profileData.profileImage ? (
+                      <img
+                        src={profileData.profileImage}
+                        alt="Profile"
+                        className="w-24 h-24 rounded-full object-cover border"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                        <span className="text-3xl font-bold text-white">
+                          {profileData.firstName?.[0] || ""}
+                          {profileData.lastName?.[0] || ""}
+                        </span>
+                      </div>
+                    )}
                     <div>
                       <h3 className="text-lg font-semibold mb-2">
                         Profile Picture
                       </h3>
-                      <Button variant="outline" size="sm">
-                        Upload Photo
-                      </Button>
+                      <div className="flex items-center gap-3">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setProfileImageFile(e.target.files?.[0] || null)}
+                          className="max-w-xs"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleUploadProfilePhoto}
+                          disabled={uploadingProfileImage || !profileImageFile}
+                        >
+                          {uploadingProfileImage ? "Uploading..." : "Upload Photo"}
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
@@ -809,7 +881,7 @@ const Profile = () => {
                             <p><span className="font-medium">Date:</span> {new Date(event.date).toLocaleDateString()}</p>
                             {event.startTime && <p><span className="font-medium">Time:</span> {event.startTime} - {event.endTime}</p>}
                             {event.capacity > 0 && <p><span className="font-medium">Capacity:</span> {event.capacity}</p>}
-                            <p><span className="font-medium">Price:</span> {event.price > 0 ? `$${event.price}` : 'Free'}</p>
+                            <p><span className="font-medium">Price:</span> {event.price > 0 ? `₹${event.price}` : 'Free'}</p>
                             <p className="text-xs pt-2 line-clamp-2">{event.description}</p>
                             <p className="text-xs pt-1">Submitted: {new Date(event.createdAt).toLocaleDateString()}</p>
                           </div>

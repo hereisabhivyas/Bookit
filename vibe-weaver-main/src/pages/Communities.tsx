@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { API_URL } from "@/lib/api";
 
 const Communities = () => {
   const [activeFilter, setActiveFilter] = useState("all");
@@ -44,6 +45,8 @@ const Communities = () => {
     requireApproval: false,
     allowMemberInvites: true,
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -53,7 +56,7 @@ const Communities = () => {
 
   const fetchCommunities = async () => {
     try {
-      const response = await fetch('https://bookit-dijk.onrender.com/api/communities');
+      const response = await fetch(`${API_URL}/api/communities`);
       const data = await response.json();
       setCommunities(data);
       // After loading communities, if logged in, fetch membership status per community
@@ -62,7 +65,7 @@ const Communities = () => {
         const results = await Promise.all(
           data.map(async (c: any) => {
             try {
-              const res = await fetch(`https://bookit-dijk.onrender.com/api/communities/${c._id}`, {
+              const res = await fetch(`${API_URL}/api/communities/${c._id}`, {
                 headers: { Authorization: `Bearer ${token}` },
               });
               if (!res.ok) return { id: c._id, status: null };
@@ -92,6 +95,36 @@ const Communities = () => {
     }
   };
 
+  const handleUploadLogo = async () => {
+    if (!logoFile) return;
+    setUploadingLogo(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Not authenticated');
+      const formDataUpload = new FormData();
+      formDataUpload.append('images', logoFile);
+      const resp = await fetch(`${API_URL}/upload/images`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formDataUpload,
+      });
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to upload logo');
+      }
+      const data = await resp.json();
+      const url = data?.urls?.[0];
+      if (!url) throw new Error('No logo URL returned');
+      setFormData(prev => ({ ...prev, icon: url }));
+      setLogoFile(null);
+      toast({ title: 'Logo uploaded', description: 'Logo has been set for this community.' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e?.message || 'Unable to upload logo', variant: 'destructive' });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   const handleCreateCommunity = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -106,7 +139,7 @@ const Communities = () => {
     }
 
     try {
-      const response = await fetch('https://bookit-dijk.onrender.com/api/communities', {
+      const response = await fetch(`${API_URL}/api/communities`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -234,7 +267,19 @@ const Communities = () => {
 
                     {/* Icon Selection */}
                     <div className="space-y-2">
-                      <Label>Community Icon</Label>
+                      <Label>Community Logo</Label>
+                      <div className="flex items-center gap-3 flex-wrap mb-4">
+                        {formData.icon && (formData.icon.startsWith('http') || formData.icon.startsWith('data:')) ? (
+                          <img src={formData.icon} alt="Logo Preview" className="w-16 h-16 rounded object-cover border" />
+                        ) : (
+                          <div className="w-16 h-16 rounded bg-muted flex items-center justify-center text-2xl">{formData.icon || '👥'}</div>
+                        )}
+                        <Input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} className="max-w-xs" />
+                        <Button variant="outline" size="sm" onClick={handleUploadLogo} disabled={!logoFile || uploadingLogo}>
+                          {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                        </Button>
+                      </div>
+                      <div className="text-sm text-muted-foreground mb-4">Or choose an emoji:</div>
                       <div className="grid grid-cols-6 gap-2">
                         {emojiOptions.map((emoji) => (
                           <button

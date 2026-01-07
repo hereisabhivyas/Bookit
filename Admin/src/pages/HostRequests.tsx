@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import { CheckCircle, XCircle, Calendar, Building2, Clock, DollarSign, Users, MapPin, X } from "lucide-react";
+import { API_URL } from "@/lib/api";
 
 type Request = {
   _id: string;
@@ -46,16 +47,17 @@ const HostRequests = () => {
   const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "rejected">("all");
 
   const adminToken = localStorage.getItem("adminToken") || "";
+  const apiBase = API_URL;
 
   async function load() {
     setLoading(true);
     setError("");
     try {
       const [venuesResp, eventsResp] = await Promise.all([
-        axios.get<Request[]>("https://bookit-dijk.onrender.com/admin/host/requests", {
+        axios.get<Request[]>(`${apiBase}/admin/host/requests`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         }),
-        axios.get<EventRequest[]>("https://bookit-dijk.onrender.com/admin/events", {
+        axios.get<EventRequest[]>(`${apiBase}/admin/events`, {
           headers: { Authorization: `Bearer ${adminToken}` },
         })
       ]);
@@ -87,8 +89,8 @@ const HostRequests = () => {
     if (!window.confirm(`${status === "approved" ? "Approve" : "Reject"} this ${type}?`)) return;
     try {
       const endpoint = type === "venue" 
-        ? `https://bookit-dijk.onrender.com/admin/host/requests/${id}/status`
-        : `https://bookit-dijk.onrender.com/admin/events/${id}/status`;
+        ? `${apiBase}/admin/host/requests/${id}/status`
+        : `${apiBase}/admin/events/${id}/status`;
       
       const resp = await axios.put<Request | EventRequest>(
         endpoint,

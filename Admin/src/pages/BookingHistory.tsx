@@ -15,8 +15,7 @@ import {
   Filter,
   Download,
 } from "lucide-react";
-
-const API_URL = "https://bookit-dijk.onrender.com";
+import { API_URL } from "@/lib/api";
 
 interface VenueBooking {
   type: "venue";

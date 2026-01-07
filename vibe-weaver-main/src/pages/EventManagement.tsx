@@ -30,8 +30,10 @@ import {
   MapPin,
   Clock,
 } from "lucide-react";
+import { API_URL } from "@/lib/api";
 
 const EventManagement = () => {
+  const apiBase = API_URL;
   const { id } = useParams();
   const navigate = useNavigate();
   const todayDate = new Date().toISOString().split("T")[0];
@@ -77,9 +79,12 @@ const EventManagement = () => {
     title: "",
     category: "",
     location: "",
+    mapLink: "",
     date: "",
     startTime: "",
     endTime: "",
+    durationHours: 0,
+    durationMinutes: 0,
     description: "",
     capacity: 0,
     price: 0,
@@ -94,22 +99,11 @@ const EventManagement = () => {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   useEffect(() => {
+    // Align behavior with VenueManagement: load once, refresh only on manual action
     fetchEventDetails();
 
-    // Auto-refresh when window gains focus
-    const handleFocus = () => {
-      refreshEventDetails();
-    };
-    window.addEventListener('focus', handleFocus);
-
-    // Auto-refresh every 10 seconds to keep data in sync
-    const intervalId = setInterval(() => {
-      refreshEventDetails();
-    }, 10000);
-
     return () => {
-      window.removeEventListener('focus', handleFocus);
-      clearInterval(intervalId);
+      // No auto-refresh listeners/intervals
     };
   }, [id]);
 
@@ -118,7 +112,7 @@ const EventManagement = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const resp = await axios.get(`https://bookit-dijk.onrender.com/host/my-events/${id}`, {
+      const resp = await axios.get(`${apiBase}/host/my-events/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -132,13 +126,29 @@ const EventManagement = () => {
         const safeStart = clampToNow(safeDate, baseStart);
         const safeEnd = baseEnd < safeStart ? safeStart : baseEnd;
         
+        // Calculate duration from startTime and endTime
+        const calculateDuration = (start: string, end: string) => {
+          const [sh, sm] = start.split(':').map(Number);
+          const [eh, em] = end.split(':').map(Number);
+          const startMins = sh * 60 + sm;
+          const endMins = eh * 60 + em;
+          let diffMins = endMins - startMins;
+          if (diffMins <= 0) diffMins = 60; // Default to 1 hour
+          return { hours: Math.floor(diffMins / 60), minutes: diffMins % 60 };
+        };
+        
+        const { hours, minutes } = calculateDuration(safeStart, safeEnd);
+        
         setEventData({
           title: resp.data.title || "",
           category: resp.data.category || "",
           location: resp.data.location || "",
+          mapLink: resp.data.mapLink || "",
           date: safeDate,
           startTime: safeStart,
           endTime: safeEnd,
+          durationHours: hours,
+          durationMinutes: minutes,
           description: resp.data.description || "",
           capacity: resp.data.capacity || 0,
           price: resp.data.price || 0,
@@ -162,7 +172,7 @@ const EventManagement = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const resp = await axios.get(`https://bookit-dijk.onrender.com/host/my-events/${id}`, {
+      const resp = await axios.get(`${apiBase}/host/my-events/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -177,13 +187,29 @@ const EventManagement = () => {
         const safeStart = clampToNow(safeDate, baseStart);
         const safeEnd = baseEnd < safeStart ? safeStart : baseEnd;
         
+        // Calculate duration from startTime and endTime
+        const calculateDuration = (start: string, end: string) => {
+          const [sh, sm] = start.split(':').map(Number);
+          const [eh, em] = end.split(':').map(Number);
+          const startMins = sh * 60 + sm;
+          const endMins = eh * 60 + em;
+          let diffMins = endMins - startMins;
+          if (diffMins <= 0) diffMins = 60; // Default to 1 hour
+          return { hours: Math.floor(diffMins / 60), minutes: diffMins % 60 };
+        };
+        
+        const { hours, minutes } = calculateDuration(safeStart, safeEnd);
+        
         setEventData({
           title: resp.data.title || "",
           category: resp.data.category || "",
           location: resp.data.location || "",
+          mapLink: resp.data.mapLink || "",
           date: safeDate,
           startTime: safeStart,
           endTime: safeEnd,
+          durationHours: hours,
+          durationMinutes: minutes,
           description: resp.data.description || "",
           capacity: resp.data.capacity || 0,
           price: resp.data.price || 0,
@@ -219,17 +245,25 @@ const EventManagement = () => {
     setEventData((prev) => {
       const minStart = prev.date === todayDate ? currentTime : '00:00';
       const safeStart = candidate < minStart ? minStart : candidate;
-      const safeEnd = prev.endTime && prev.endTime < safeStart ? safeStart : (prev.endTime || safeStart);
+      // Recalculate endTime based on new startTime + duration
+      const [sh, sm] = safeStart.split(':').map(Number);
+      const totalMins = sh * 60 + sm + (prev.durationHours * 60) + prev.durationMinutes;
+      const eh = Math.floor(totalMins / 60) % 24;
+      const em = totalMins % 60;
+      const safeEnd = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
       return { ...prev, startTime: safeStart, endTime: safeEnd };
     });
   };
 
-  const updateEndTime = (hour: string, minute: string, ampm: string) => {
-    const candidate = to24Hour(hour, minute, ampm);
+  const updateDuration = (hours: number, minutes: number) => {
     setEventData((prev) => {
-      const minEnd = prev.startTime || (prev.date === todayDate ? currentTime : '00:00');
-      const safeEnd = candidate < minEnd ? minEnd : candidate;
-      return { ...prev, endTime: safeEnd };
+      // Recalculate endTime based on startTime + new duration
+      const [sh, sm] = (prev.startTime || currentTime).split(':').map(Number);
+      const totalMins = sh * 60 + sm + (hours * 60) + minutes;
+      const eh = Math.floor(totalMins / 60) % 24;
+      const em = totalMins % 60;
+      const safeEnd = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+      return { ...prev, durationHours: hours, durationMinutes: minutes, endTime: safeEnd };
     });
   };
 
@@ -258,7 +292,7 @@ const EventManagement = () => {
       }
 
       const resp = await axios.post(
-        `https://bookit-dijk.onrender.com/upload/images`,
+        `${apiBase}/upload/images`,
         formData,
         {
           headers: {
@@ -294,7 +328,7 @@ const EventManagement = () => {
       const imgUrl = eventData.images[index];
       if (!imgUrl) return;
       const token = localStorage.getItem("token");
-      await axios.delete(`https://bookit-dijk.onrender.com/host/my-events/${id}/images`, {
+      await axios.delete(`${apiBase}/host/my-events/${id}/images`, {
         headers: { Authorization: `Bearer ${token}` },
         data: { url: imgUrl },
       });
@@ -319,7 +353,7 @@ const EventManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const resp = await axios.put(
-        `https://bookit-dijk.onrender.com/host/my-events/${id}`,
+        `${apiBase}/host/my-events/${id}`,
         eventData,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -342,7 +376,7 @@ const EventManagement = () => {
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`https://bookit-dijk.onrender.com/host/my-events/${id}`, {
+      await axios.delete(`${apiBase}/host/my-events/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       navigate("/profile");
@@ -452,6 +486,39 @@ const EventManagement = () => {
                     onChange={(e) => handleInputChange("location", e.target.value)}
                     placeholder="Event location/address"
                   />
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (!navigator.geolocation) {
+                          setError("Geolocation not supported");
+                          setTimeout(() => setError(""), 3000);
+                          return;
+                        }
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            const { latitude, longitude } = pos.coords;
+                            const link = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+                            handleInputChange("mapLink", link);
+                          },
+                          (err) => {
+                            setError(err?.message || "Failed to get location");
+                            setTimeout(() => setError(""), 3000);
+                          },
+                          { enableHighAccuracy: true, timeout: 10000 }
+                        );
+                      }}
+                    >
+                      Use my location
+                    </Button>
+                    {eventData.mapLink && (
+                      <a href={eventData.mapLink} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                        Preview on Maps
+                      </a>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="date" className="flex items-center gap-2">
@@ -527,50 +594,38 @@ const EventManagement = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endTime" className="flex items-center gap-2">
-                    <span>End Time</span>
-                    <span className="text-xs text-muted-foreground">After start</span>
+                  <Label htmlFor="duration" className="flex items-center gap-2">
+                    <span>Event Duration</span>
+                    <span className="text-xs text-muted-foreground">Hours and minutes</span>
                   </Label>
                   <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3 bg-muted/40">
                     <Clock className="w-4 h-4 text-muted-foreground" />
                     <select
                       className="rounded-md border px-2 py-1 bg-background"
-                      value={endParts.hour}
-                      onChange={(e) => updateEndTime(e.target.value, endParts.minute, endParts.ampm)}
+                      value={eventData.durationHours}
+                      onChange={(e) => updateDuration(parseInt(e.target.value) || 0, eventData.durationMinutes)}
                     >
-                      {hourOptions.map((h) => (
-                        <option key={h} value={h}>{h}</option>
+                      {Array.from({ length: 24 }, (_, i) => i).map((h) => (
+                        <option key={h} value={h}>{String(h).padStart(2, '0')} hour{h !== 1 ? 's' : ''}</option>
                       ))}
                     </select>
-                    <span className="text-sm text-muted-foreground">:</span>
+                    <span className="text-sm text-muted-foreground">+</span>
                     <select
                       className="rounded-md border px-2 py-1 bg-background"
-                      value={endParts.minute}
-                      onChange={(e) => updateEndTime(endParts.hour, e.target.value, endParts.ampm)}
+                      value={eventData.durationMinutes}
+                      onChange={(e) => updateDuration(eventData.durationHours, parseInt(e.target.value) || 0)}
                     >
                       {minuteOptions.map((m) => (
-                        <option key={m} value={m}>{m}</option>
+                        <option key={m} value={m}>{m} min</option>
                       ))}
-                    </select>
-                    <select
-                      className="rounded-md border px-2 py-1 bg-background"
-                      value={endParts.ampm}
-                      onChange={(e) => updateEndTime(endParts.hour, endParts.minute, e.target.value)}
-                    >
-                      <option value="AM">AM</option>
-                      <option value="PM">PM</option>
                     </select>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        const baseline = eventData.startTime || currentTime;
-                        const bumped = to12HourParts(baseline);
-                        updateEndTime(bumped.hour, bumped.minute, bumped.ampm);
-                      }}
+                      onClick={() => updateDuration(1, 0)}
                     >
-                      Align with start
+                      1 hour
                     </Button>
                   </div>
                 </div>
@@ -615,7 +670,7 @@ const EventManagement = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price ($)</Label>
+                  <Label htmlFor="price">Price (₹)</Label>
                   <Input
                     id="price"
                     type="number"
@@ -641,7 +696,7 @@ const EventManagement = () => {
                   <p><strong>Total Capacity:</strong> {eventData.capacity}</p>
                   <p><strong>Tickets Sold:</strong> {eventData.capacity - eventData.ticketsAvailable}</p>
                   <p><strong>Tickets Remaining:</strong> {eventData.ticketsAvailable}</p>
-                  <p><strong>Revenue:</strong> ${((eventData.capacity - eventData.ticketsAvailable) * eventData.price).toFixed(2)}</p>
+                  <p><strong>Revenue:</strong> ₹{((eventData.capacity - eventData.ticketsAvailable) * eventData.price).toFixed(2)}</p>
                 </div>
               </div>
             </Card>

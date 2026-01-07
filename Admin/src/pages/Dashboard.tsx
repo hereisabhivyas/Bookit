@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import { API_URL } from "@/lib/api";
 
 interface Stats {
   totalUsers: number;
@@ -46,8 +47,6 @@ interface DashboardData {
   recentUsers: User[];
   pendingHostRequests: HostRequest[];
 }
-
-const API_URL = 'https://bookit-dijk.onrender.com';
 
 const Dashboard = () => {
   const navigate = useNavigate();

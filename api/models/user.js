@@ -9,6 +9,7 @@ const userSchema = new Schema({
   phone: { type: String, default: '' },
   location: { type: String, default: '' },
   bio: { type: String, default: '' },
+  profileImage: { type: String, default: '' },
   settings: {
     emailNotifications: { type: Boolean, default: true },
     pushNotifications: { type: Boolean, default: false },

@@ -7,9 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMemo, useState } from "react";
 import axios from "axios";
+import { API_URL } from "@/lib/api";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://bookit-dijk.onrender.com",
+  baseURL: API_URL,
+  withCredentials: true,
 });
 
 declare global {

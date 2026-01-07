@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { Trash2, Users as UsersIcon, Mail, Calendar, Activity, X } from "lucide-react";
 import Sidebar from "../components/Sidebar";
+import { API_URL } from "@/lib/api";
 
 interface User {
   _id: string;
@@ -23,6 +24,7 @@ const Users = () => {
   const [sortBy, setSortBy] = useState<"recent" | "name">("recent");
 
   const adminToken = localStorage.getItem("adminToken") || "";
+  const apiBase = API_URL;
 
   useEffect(() => {
     fetchUsers();
@@ -38,7 +40,7 @@ const Users = () => {
     setLoading(true);
     setError("");
     try {
-      const resp = await axios.get<User[]>("https://bookit-dijk.onrender.com/admin/users", {
+      const resp = await axios.get<User[]>(`${apiBase}/admin/users`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       const sortedUsers = (resp.data || []).sort((a, b) => {
@@ -59,7 +61,7 @@ const Users = () => {
   const handleDeleteUser = async (userId: string) => {
     if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
     try {
-      await axios.delete(`https://bookit-dijk.onrender.com/admin/users/${userId}`, {
+      await axios.delete(`${apiBase}/admin/users/${userId}`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       setUsers((prev) => prev.filter((u) => u._id !== userId));

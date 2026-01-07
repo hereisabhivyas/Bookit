@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useGoogleLogin } from '@react-oauth/google';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, Sparkles } from "lucide-react";
 import axios from "axios";
+import { API_URL } from "@/lib/api";
 
 
 const Auth = () => {
@@ -45,7 +47,7 @@ const Auth = () => {
 
     setLoading(true);
     try {
-      const url = isLogin ? 'https://bookit-dijk.onrender.com/auth/login' : 'https://bookit-dijk.onrender.com/auth/signup';
+      const url = isLogin ? `${API_URL}/auth/login` : `${API_URL}/auth/signup`;
       const payload: any = { email, password };
       if (!isLogin) payload.name = name;
 
@@ -66,6 +68,38 @@ const Auth = () => {
       setLoading(false);
     }
   }
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (codeResponse) => {
+      setLoading(true);
+      setServerError("");
+      try {
+        // Send the access token to your backend
+        const resp = await axios.post(
+          `${API_URL}/auth/google`,
+          { token: codeResponse.access_token },
+          { withCredentials: true }
+        );
+        const data = resp.data;
+        if (data?.token) {
+          localStorage.setItem('token', data.token);
+          if (data?.user?.email) {
+            localStorage.setItem('userEmail', data.user.email);
+          }
+          navigate("/");
+        }
+        setSuccessMessage('Signed in with Google');
+      } catch (err: any) {
+        const msg = err?.response?.data?.error || err.message || 'Google authentication failed';
+        setServerError(msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      setServerError('Google authentication failed');
+    },
+  });
 
 
   return (
@@ -228,7 +262,13 @@ const Auth = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" type="button" className="h-12">
+              <Button 
+                variant="outline" 
+                type="button" 
+                className="h-12"
+                onClick={() => handleGoogleLogin()}
+                disabled={loading}
+              >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
