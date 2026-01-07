@@ -327,55 +327,36 @@ const VenueManagement = () => {
   };
 
   const handleImageUpload = async () => {
-    if (!imageFiles || imageFiles.length === 0) {
-      setError("Please select at least one image file");
-      setTimeout(() => setError(""), 3000);
-      return;
+  if (!imageFiles || imageFiles.length === 0) {
+    setError("Please select at least one image file");
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+
+    for (let i = 0; i < imageFiles.length; i++) {
+      formData.append("images", imageFiles[i]); // MUST be "images"
     }
 
-    setUploadingImages(true);
-    setError("");
-    setSuccess("");
-    
-    try {
-      const token = localStorage.getItem("token");
-      const formData = new FormData();
-      
-      for (let i = 0; i < imageFiles.length; i++) {
-        formData.append("images", imageFiles[i]);
+    const res = await axios.post(
+      "https://bookit-dijk.onrender.com/upload/images",
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // ❌ DO NOT set Content-Type
+        },
       }
+    );
 
-      const resp = await axios.post(
-        `https://bookit-dijk.onrender.com/upload/images`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+    console.log("Upload success:", res.data);
+  } catch (err) {
+    console.error("Upload failed:", err);
+  }
+};
 
-      if (resp.data && resp.data.urls) {
-        setVenueData((prev) => ({
-          ...prev,
-          images: [...prev.images, ...resp.data.urls],
-        }));
-        setSuccess(`${resp.data.urls.length} image(s) uploaded successfully!`);
-        setTimeout(() => setSuccess(""), 3000);
-        // Clear the file input
-        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
-      }
-    } catch (err: any) {
-      console.error("Upload error:", err);
-      const errorMsg = err?.response?.data?.error || err?.message || "Failed to upload images";
-      setError(errorMsg);
-      setTimeout(() => setError(""), 5000);
-    } finally {
-      setUploadingImages(false);
-      setImageFiles(null);
-    }
-  };
 
   const handleRemoveImage = async (index: number) => {
     try {
