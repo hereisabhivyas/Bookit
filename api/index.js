@@ -46,14 +46,14 @@ if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !pr
 // Configure multer for Cloudinary uploads (function API)
 const storage = cloudinaryStorage({
   cloudinary,
-  params: (req, file) => {
-    const baseName = path.parse(file.originalname || 'upload').name;
-    return {
-      folder: 'vibeweaver',
-      allowed_formats: ['jpeg', 'jpg', 'png', 'gif', 'webp'],
-      resource_type: 'auto',
-      public_id: `${Date.now()}-${baseName}`
-    };
+  params: {
+    folder: 'vibeweaver',
+    allowed_formats: ['jpeg', 'jpg', 'png', 'gif', 'webp'],
+    resource_type: 'auto',
+    public_id: (req, file) => {
+      const baseName = path.parse(file.originalname || 'upload').name;
+      return `${Date.now()}-${baseName}`;
+    }
   }
 });
 
@@ -211,15 +211,22 @@ app.post('/upload/images', getUserFromToken, (req, res, next) => {
       return res.status(400).json({ error: 'No images uploaded' });
     }
 
-    console.log('Processing files:', req.files.map(f => ({ name: f.filename, url: f.secure_url })));
+    console.log('Processing files:', req.files.map(f => ({ 
+      name: f.filename, 
+      path: f.path, 
+      secure_url: f.secure_url 
+    })));
 
     // Extract Cloudinary URLs from uploaded files
-    const urls = req.files.map(file => file.secure_url).filter(url => url);
+    // multer-storage-cloudinary stores the URL in the 'path' property
+    const urls = req.files.map(file => file.path || file.secure_url).filter(url => url);
 
     if (urls.length === 0) {
       console.error('No secure URLs returned from Cloudinary');
       return res.status(500).json({ error: 'Failed to process uploaded files - no URLs returned' });
     }
+
+    console.log('Extracted URLs:', urls);
 
     res.json({ 
       message: 'Images uploaded successfully', 
