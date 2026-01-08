@@ -677,8 +677,8 @@ const CommunityChat = () => {
       {/* Header */}
       <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <Button
                 variant="ghost"
                 size="sm"
@@ -688,19 +688,19 @@ const CommunityChat = () => {
                 <ArrowLeft className="w-4 h-4" />
                 Back
               </Button>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 {community.icon && (community.icon.startsWith('http') || community.icon.startsWith('data:')) ? (
                   <img src={community.icon} alt="Community Logo" className="w-10 h-10 rounded object-cover border" />
                 ) : (
                   <div className="text-3xl">{community.icon || '👥'}</div>
                 )}
-                <div>
-                  <h1 className="text-xl font-bold flex items-center gap-2">
-                    {community.name}
+                <div className="min-w-0">
+                  <h1 className="text-xl font-bold flex items-center gap-2 truncate">
+                    <span className="truncate">{community.name}</span>
                     {community.isPrivate ? (
-                      <Lock className="w-4 h-4 text-muted-foreground" />
+                      <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     ) : (
-                      <Globe className="w-4 h-4 text-muted-foreground" />
+                      <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     )}
                   </h1>
                   <p className="text-sm text-muted-foreground flex items-center gap-2">
@@ -710,7 +710,12 @@ const CommunityChat = () => {
                 </div>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => setSettingsOpen(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 flex-shrink-0"
+              onClick={() => setSettingsOpen(true)}
+            >
               <Settings className="w-4 h-4" />
               Settings
             </Button>
