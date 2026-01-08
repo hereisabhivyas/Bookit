@@ -4,6 +4,9 @@
   "installCommand": "npm install --include=dev",
   "framework": "vite",
   "devCommand": "npm run dev",
+  "env": {
+    "VITE_API_URL": "https://bookit-dijk.onrender.com"
+  },
   "rewrites": [
     {
       "source": "/(.*)",
