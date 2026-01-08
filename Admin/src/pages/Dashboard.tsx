@@ -145,10 +145,10 @@ const Dashboard = () => {
     return recentUsers.length;
   };
 
-  const stats = dashboardData ? [
+  const stats = dashboardData?.stats ? [
     { 
       label: "Total Users", 
-      value: dashboardData.stats.totalUsers.toString(), 
+      value: (dashboardData.stats.totalUsers || 0).toString(), 
       icon: Users, 
       color: "bg-blue-500",
       gradient: "from-blue-500 to-blue-600",
@@ -157,7 +157,7 @@ const Dashboard = () => {
     },
     { 
       label: "Active Venues", 
-      value: dashboardData.stats.activeVenues.toString(), 
+      value: (dashboardData.stats.activeVenues || 0).toString(), 
       icon: Building2, 
       color: "bg-green-500",
       gradient: "from-green-500 to-green-600",
@@ -167,16 +167,16 @@ const Dashboard = () => {
     },
     { 
       label: "Pending Requests", 
-      value: dashboardData.stats.pendingRequests.toString(), 
+      value: (dashboardData.stats.pendingRequests || 0).toString(), 
       icon: FileCheck, 
       color: "bg-yellow-500",
       gradient: "from-yellow-500 to-yellow-600",
-      change: dashboardData.stats.pendingRequests,
+      change: dashboardData.stats.pendingRequests || 0,
       changeLabel: "awaiting review"
     },
     { 
       label: "Total Events", 
-      value: dashboardData.stats.totalEvents.toString(), 
+      value: (dashboardData.stats.totalEvents || 0).toString(), 
       icon: Calendar, 
       color: "bg-purple-500",
       gradient: "from-purple-500 to-purple-600",
@@ -247,6 +247,20 @@ const Dashboard = () => {
                 Re-login
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="flex h-screen bg-gray-100">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto mb-4" />
+            <p className="text-gray-600 font-medium">Loading dashboard data...</p>
           </div>
         </div>
       </div>
