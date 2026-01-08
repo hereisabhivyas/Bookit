@@ -145,46 +145,6 @@ const Dashboard = () => {
     return recentUsers.length;
   };
 
-  const stats = dashboardData?.stats ? [
-    { 
-      label: "Total Users", 
-      value: (dashboardData.stats.totalUsers || 0).toString(), 
-      icon: Users, 
-      color: "bg-blue-500",
-      gradient: "from-blue-500 to-blue-600",
-      change: getRecentGrowth(),
-      changeLabel: "new today"
-    },
-    { 
-      label: "Active Venues", 
-      value: (dashboardData.stats.activeVenues || 0).toString(), 
-      icon: Building2, 
-      color: "bg-green-500",
-      gradient: "from-green-500 to-green-600",
-      change: allRequests.filter(r => r.status === 'approved' && 
-        new Date(r.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length,
-      changeLabel: "this week"
-    },
-    { 
-      label: "Pending Requests", 
-      value: (dashboardData.stats.pendingRequests || 0).toString(), 
-      icon: FileCheck, 
-      color: "bg-yellow-500",
-      gradient: "from-yellow-500 to-yellow-600",
-      change: dashboardData.stats.pendingRequests || 0,
-      changeLabel: "awaiting review"
-    },
-    { 
-      label: "Total Events", 
-      value: (dashboardData.stats.totalEvents || 0).toString(), 
-      icon: Calendar, 
-      color: "bg-purple-500",
-      gradient: "from-purple-500 to-purple-600",
-      change: 0,
-      changeLabel: "this month"
-    },
-  ] : [];
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -266,6 +226,47 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  // Build stats array only after confirming dashboardData exists
+  const stats = dashboardData.stats ? [
+    { 
+      label: "Total Users", 
+      value: (dashboardData.stats.totalUsers || 0).toString(), 
+      icon: Users, 
+      color: "bg-blue-500",
+      gradient: "from-blue-500 to-blue-600",
+      change: getRecentGrowth(),
+      changeLabel: "new today"
+    },
+    { 
+      label: "Active Venues", 
+      value: (dashboardData.stats.activeVenues || 0).toString(), 
+      icon: Building2, 
+      color: "bg-green-500",
+      gradient: "from-green-500 to-green-600",
+      change: allRequests.filter(r => r.status === 'approved' && 
+        new Date(r.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length,
+      changeLabel: "this week"
+    },
+    { 
+      label: "Pending Requests", 
+      value: (dashboardData.stats.pendingRequests || 0).toString(), 
+      icon: FileCheck, 
+      color: "bg-yellow-500",
+      gradient: "from-yellow-500 to-yellow-600",
+      change: dashboardData.stats.pendingRequests || 0,
+      changeLabel: "awaiting review"
+    },
+    { 
+      label: "Total Events", 
+      value: (dashboardData.stats.totalEvents || 0).toString(), 
+      icon: Calendar, 
+      color: "bg-purple-500",
+      gradient: "from-purple-500 to-purple-600",
+      change: 0,
+      changeLabel: "this month"
+    },
+  ] : [];
 
   const approvedCount = allRequests.filter(r => r.status === 'approved').length;
   const rejectedCount = allRequests.filter(r => r.status === 'rejected').length;
