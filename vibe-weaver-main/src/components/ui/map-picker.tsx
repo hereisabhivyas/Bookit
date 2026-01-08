@@ -39,15 +39,65 @@ function ClickHandler({ onSelect }: { onSelect: (lat: number, lng: number) => vo
   return null;
 }
 
+function DraggableMarker({ position, onDragEnd, icon }: { position: { lat: number; lng: number }, onDragEnd: (lat: number, lng: number) => void, icon: any }) {
+  const markerRef = useMapEvents({
+    dragend() {
+      const marker = markerRef.target as any;
+      if (marker) {
+        const pos = marker.getLatLng();
+        onDragEnd(pos.lat, pos.lng);
+      }
+    },
+  });
+
+  const RLMarker = Marker as unknown as any;
+
+  return (
+    <RLMarker
+      position={[position.lat, position.lng]}
+      draggable={true}
+      icon={icon}
+      eventHandlers={{
+        dragend: (e: any) => {
+          const pos = e.target.getLatLng();
+          onDragEnd(pos.lat, pos.lng);
+        },
+      }}
+    />
+  );
+}
+
 export function MapPickerDialog({ open, onOpenChange, initialCoords, onConfirm }: MapPickerProps) {
   const [position, setPosition] = useState<{ lat: number; lng: number } | null>(initialCoords || null);
   const [address, setAddress] = useState<string | undefined>();
   const [city, setCity] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
   useEffect(() => {
-    setPosition(initialCoords || null);
-  }, [initialCoords, open]);
+    if (open && !initialCoords) {
+      // Auto-detect user's current location when dialog opens
+      setDetectingLocation(true);
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            setDetectingLocation(false);
+          },
+          (err) => {
+            console.warn('Geolocation failed:', err.message);
+            setDetectingLocation(false);
+            // Fallback: keep default India center
+          },
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
+        );
+      } else {
+        setDetectingLocation(false);
+      }
+    } else if (open && initialCoords) {
+      setPosition(initialCoords);
+    }
+  }, [open, initialCoords]);
 
   useEffect(() => {
     const fetchAddress = async () => {
@@ -78,7 +128,7 @@ export function MapPickerDialog({ open, onOpenChange, initialCoords, onConfirm }
   // Work around React-Leaflet TS prop typing in some environments
   const RLMapContainer = MapContainer as unknown as any;
   const RLTileLayer = TileLayer as unknown as any;
-  const RLMarker = Marker as unknown as any;
+  const RLDraggableMarker = DraggableMarker as unknown as any;
 
   const handleConfirm = () => {
     if (!position) return;
@@ -92,14 +142,16 @@ export function MapPickerDialog({ open, onOpenChange, initialCoords, onConfirm }
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Select Location on Map</DialogTitle>
-          <DialogDescription>Click anywhere on the map to drop a marker. We will try to fetch the address and city automatically.</DialogDescription>
+          <DialogDescription>
+            {detectingLocation ? 'Detecting your current location...' : 'Drag the pin to adjust your location, or click anywhere on the map to move it. Address and city will be fetched automatically.'}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="h-[400px] w-full rounded-md overflow-hidden border">
             <RLMapContainer center={center} zoom={position ? 13 : 4} style={{ height: '100%', width: '100%' }} scrollWheelZoom>
               <RLTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
               <ClickHandler onSelect={(lat, lng) => setPosition({ lat, lng })} />
-              {position && <RLMarker position={[position.lat, position.lng]} icon={markerIcon} />}            
+              {position && <RLDraggableMarker position={position} onDragEnd={(lat, lng) => setPosition({ lat, lng })} icon={markerIcon} />}            
             </RLMapContainer>
           </div>
           <div className="text-sm text-muted-foreground">
