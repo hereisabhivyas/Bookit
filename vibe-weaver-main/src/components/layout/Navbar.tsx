@@ -1,13 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Home, User, Menu, X } from "lucide-react";
+import { Calendar, Users, Home, User, Menu, X, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
+import { useCityLocation } from "@/hooks/use-city-location";
 
 const Navbar = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { cityInfo, loading, error, refresh } = useCityLocation();
 
   useEffect(() => {
     const checkLogin = () => {
@@ -48,6 +50,16 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
+            <div className="flex items-center mr-2 px-2 py-1 rounded-md border border-border/50 text-sm text-muted-foreground gap-1">
+              <MapPin className="w-4 h-4" />
+              {cityInfo.city || cityInfo.locality ? (
+                <span>{cityInfo.city || cityInfo.locality}</span>
+              ) : loading ? (
+                <span>Detecting…</span>
+              ) : (
+                <button className="underline" onClick={refresh} aria-label="Detect location">Detect location</button>
+              )}
+            </div>
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -96,6 +108,16 @@ const Navbar = () => {
         {isOpen && (
           <div className="md:hidden py-4 border-t border-border/50 animate-fade-in-up">
             <div className="flex flex-col gap-2">
+              <div className="flex items-center px-3 py-2 rounded-md border border-border/50 text-sm text-muted-foreground gap-2">
+                <MapPin className="w-4 h-4" />
+                {cityInfo.city || cityInfo.locality ? (
+                  <span>{cityInfo.city || cityInfo.locality}</span>
+                ) : loading ? (
+                  <span>Detecting…</span>
+                ) : (
+                  <button className="underline" onClick={refresh} aria-label="Detect location">Detect location</button>
+                )}
+              </div>
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
