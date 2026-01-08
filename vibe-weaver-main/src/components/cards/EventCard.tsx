@@ -1,6 +1,7 @@
 import { Calendar, MapPin, Users, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import DistancePill from "@/components/ui/distance-pill";
 
 interface EventCardProps {
   id: string;
@@ -71,9 +72,12 @@ const EventCard = ({
             <Calendar className="w-4 h-4 text-accent" />
             <span>{date}</span>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <MapPin className="w-4 h-4 text-secondary" />
-            <span className="truncate">{location}</span>
+          <div className="flex items-center justify-between gap-2 text-muted-foreground text-sm">
+            <div className="flex items-center gap-2 min-w-0">
+              <MapPin className="w-4 h-4 text-secondary flex-shrink-0" />
+              <span className="truncate">{location}</span>
+            </div>
+            <DistancePill destination={location} />
           </div>
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Users className="w-4 h-4 text-primary" />

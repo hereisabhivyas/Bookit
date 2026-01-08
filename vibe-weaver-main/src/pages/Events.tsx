@@ -623,9 +623,7 @@ const Events = () => {
                     )}
                   </div>
 
-                  <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white h-12 font-bold hover:shadow-lg">
-                    Contact Venue
-                  </Button>
+                  {/* Contact Venue button removed per request */}
                 </>
               )}
             </div>

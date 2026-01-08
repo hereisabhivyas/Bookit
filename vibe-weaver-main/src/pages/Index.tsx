@@ -6,6 +6,7 @@ import CommunityCard from "@/components/cards/CommunityCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import DistancePill from "@/components/ui/distance-pill";
 import {
   Select,
   SelectContent,
@@ -291,9 +292,12 @@ const Index = () => {
                         {venue.description}
                       </p>
                       <div className="space-y-2 mb-4 pb-4 border-b border-gray-200">
-                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                          <MapPin className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                          <span className="font-medium">{venue.city}</span>
+                        <div className="flex items-center justify-between gap-2 text-sm text-gray-700">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <MapPin className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                            <span className="font-medium truncate">{venue.city}</span>
+                          </div>
+                          <DistancePill destination={`${venue.address || ""} ${venue.city || ""}`.trim()} />
                         </div>
                         {venue.address && (
                           <div className="text-xs text-gray-500 px-6">
