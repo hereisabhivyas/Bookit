@@ -1613,6 +1613,11 @@ app.get('/api/venues/:id', async (req, res) => {
         const mergedImages = hostReq.images && hostReq.images.length ? hostReq.images : venue.images;
         const mergedDescription = hostReq.description || venue.description;
         const mergedWebsite = hostReq.website || venue.website;
+        const mergedAddress = hostReq.address || venue.address;
+        const mergedCity = hostReq.city || venue.city;
+        const mergedMapLink = hostReq.mapLink || venue.mapLink;
+        const mergedBusinessType = hostReq.businessType || venue.businessType;
+        const mergedAmenities = hostReq.amenities || venue.amenities;
 
         // update in-memory response
         venue = venue.toObject();
@@ -1622,6 +1627,11 @@ app.get('/api/venues/:id', async (req, res) => {
         venue.images = mergedImages || [];
         venue.description = mergedDescription || '';
         venue.website = mergedWebsite || '';
+        venue.address = mergedAddress || '';
+        venue.city = mergedCity || '';
+        venue.mapLink = mergedMapLink || '';
+        venue.businessType = mergedBusinessType || venue.businessType;
+        venue.amenities = mergedAmenities || venue.amenities;
 
         // best-effort persist to keep documents in sync
         await Venue.findByIdAndUpdate(req.params.id, {
@@ -1631,6 +1641,11 @@ app.get('/api/venues/:id', async (req, res) => {
           images: venue.images,
           description: venue.description,
           website: venue.website,
+          address: venue.address,
+          city: venue.city,
+          mapLink: venue.mapLink,
+          businessType: venue.businessType,
+          amenities: venue.amenities,
         });
       }
     }
