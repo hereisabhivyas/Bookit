@@ -142,17 +142,22 @@ function getAdminFromToken(req, res, next) {
   const h = req.headers.authorization || '';
   const token = h.startsWith('Bearer ') ? h.split(' ')[1] : null;
   if (!token) {
+    console.warn('[Auth] No admin token provided');
     return res.status(401).json({ error: 'No admin token provided' });
   }
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
+    const jwtSecret = process.env.JWT_SECRET || 'dev-secret';
+    const decoded = jwt.verify(token, jwtSecret);
+    console.log('[Auth] Token decoded:', { email: decoded.email, role: decoded.role });
     if (decoded.role !== 'admin' && decoded.role !== 'superadmin') {
+      console.warn('[Auth] User is not admin:', { role: decoded.role });
       return res.status(401).json({ error: 'Not an admin' });
     }
     req.adminEmail = decoded.email;
     req.adminRole = decoded.role;
     next();
   } catch (err) {
+    console.error('[Auth] Token verification failed:', err.message);
     return res.status(401).json({ error: 'Invalid or expired admin token' });
   }
 }
@@ -1275,23 +1280,28 @@ app.post('/admin/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required.' });
     }
 
+    console.log('[Admin Login] Attempting login for:', email);
     const admin = await Admin.findOne({ email });
     if (!admin) {
+      console.log('[Admin Login] Admin not found:', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const isMatch = bcrypt.compareSync(password, admin.password);
     if (!isMatch) {
+      console.log('[Admin Login] Password mismatch for:', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const jwtSecret = process.env.JWT_SECRET || 'dev-secret';
+    console.log('[Admin Login] Generating token with role:', admin.role);
     const token = jwt.sign(
       { email: admin.email, role: admin.role },
       jwtSecret,
       { expiresIn: '7d' }
     );
 
+    console.log('[Admin Login] Login successful for:', email);
     res.json({
       token,
       admin: { name: admin.name, email: admin.email, role: admin.role },
