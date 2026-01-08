@@ -31,6 +31,7 @@ import {
   Clock,
 } from "lucide-react";
 import { API_URL } from "@/lib/api";
+import { MapPickerDialog } from "@/components/ui/map-picker";
 
 const EventManagement = () => {
   const apiBase = API_URL;
@@ -74,6 +75,7 @@ const EventManagement = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
 
   const [eventData, setEventData] = useState({
     title: "",
@@ -491,27 +493,9 @@ const EventManagement = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        if (!navigator.geolocation) {
-                          setError("Geolocation not supported");
-                          setTimeout(() => setError(""), 3000);
-                          return;
-                        }
-                        navigator.geolocation.getCurrentPosition(
-                          (pos) => {
-                            const { latitude, longitude } = pos.coords;
-                            const link = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-                            handleInputChange("mapLink", link);
-                          },
-                          (err) => {
-                            setError(err?.message || "Failed to get location");
-                            setTimeout(() => setError(""), 3000);
-                          },
-                          { enableHighAccuracy: true, timeout: 10000 }
-                        );
-                      }}
+                      onClick={() => setMapOpen(true)}
                     >
-                      Use my location
+                      Select on map
                     </Button>
                     {eventData.mapLink && (
                       <a href={eventData.mapLink} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
@@ -785,6 +769,15 @@ const EventManagement = () => {
           </div>
         </div>
       </div>
+      <MapPickerDialog
+        open={mapOpen}
+        onOpenChange={setMapOpen}
+        onConfirm={({ lat, lng, address, city, mapLink }) => {
+          handleInputChange("mapLink", mapLink);
+          const display = address || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+          handleInputChange("location", display);
+        }}
+      />
     </div>
   );
 };
