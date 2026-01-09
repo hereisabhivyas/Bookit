@@ -2,6 +2,7 @@ import { Calendar, MapPin, Users, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import DistancePill from "@/components/ui/distance-pill";
+import { useNavigate } from "react-router-dom";
 
 interface EventCardProps {
   id: string;
@@ -25,6 +26,7 @@ const badgeStyles = {
 };
 
 const EventCard = ({
+  id,
   title,
   category,
   date,
@@ -36,9 +38,20 @@ const EventCard = ({
   badge,
   onClick,
 }: EventCardProps) => {
+  const navigate = useNavigate();
+
+  const handleOpen = () => {
+    if (onClick) return onClick();
+    if (id) navigate(`/events/${id}/book`);
+  };
+
+  const handleBook = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (id) navigate(`/events/${id}/book`);
+  };
   return (
     <div
-      onClick={onClick}
+      onClick={handleOpen}
       className="group glass-card overflow-hidden cursor-pointer hover-lift"
     >
       {/* Image */}
@@ -96,7 +109,7 @@ const EventCard = ({
           </div>
         </div>
 
-        <Button variant="gradient" className="w-full mt-4">
+        <Button variant="gradient" className="w-full mt-4" onClick={handleBook}>
           Book Now
         </Button>
       </div>

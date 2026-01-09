@@ -219,24 +219,24 @@ export default function Billing() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between"><span>Event</span><span className="font-medium">{details.title}</span></div>
                   <div className="flex justify-between"><span>Tickets</span><span className="font-medium">{details.quantity}</span></div>
-                  <div className="flex justify-between"><span>Unit Price</span><span className="font-medium">${(details.unitPrice || 0).toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span>Unit Price</span><span className="font-medium">₹{(details.unitPrice || 0).toFixed(2)}</span></div>
                 </div>
               )}
 
               <div className="mt-4 pt-4 border-t space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">${subtotal.toFixed(2)}</span>
+                  <span className="font-medium">₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Platform Fee & Convenience Fee (5%)</span>
-                  <span className="font-medium">${platformFee.toFixed(2)}</span>
+                  <span className="font-medium">₹{platformFee.toFixed(2)}</span>
                 </div>
               </div>
 
               <div className="mt-4 p-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg shadow-md flex items-center justify-between">
                 <span className="text-lg font-semibold text-white">Total Amount</span>
-                <span className="text-2xl font-bold text-white">${total.toFixed(2)}</span>
+                <span className="text-2xl font-bold text-white">₹{total.toFixed(2)}</span>
               </div>
 
               <div className="mt-6 flex justify-end">

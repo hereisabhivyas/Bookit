@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowRight, Sparkles, User, Search, MapPin, Calendar, Filter, Building2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { API_URL } from "@/lib/api";
 
@@ -64,6 +64,7 @@ interface Venue {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -261,6 +262,9 @@ const Index = () => {
                     key={venue._id || index}
                     className="group bg-white rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden animate-fade-in-up border border-border/50 hover:border-purple-500/50"
                     style={{ animationDelay: `${index * 0.05}s` }}
+                    onClick={() => {
+                      if (venue._id) navigate(`/venues/${venue._id}/book`);
+                    }}
                   >
                     {/* Header image for venue */}
                     <div className="relative h-48 overflow-hidden">
@@ -311,13 +315,18 @@ const Index = () => {
                           target="_blank"
                           rel="noreferrer"
                           className="w-full block py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold text-sm text-center hover:shadow-lg transition-all duration-200 group-hover:from-purple-700 group-hover:to-pink-700"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           Visit Website
                         </a>
                       ) : (
-                        <button className="w-full py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold text-sm hover:shadow-lg transition-all duration-200 group-hover:from-purple-700 group-hover:to-pink-700">
-                          View Details
-                        </button>
+                        <Link
+                          to={venue._id ? `/venues/${venue._id}/book` : `#`}
+                          className="w-full block py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold text-sm text-center hover:shadow-lg transition-all duration-200 group-hover:from-purple-700 group-hover:to-pink-700"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Book Now
+                        </Link>
                       )}
                     </div>
                   </div>

@@ -52,7 +52,7 @@ const Events = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [viewType, setViewType] = useState<"all" | "events" | "venues">("all");
-  const [selectedItem, setSelectedItem] = useState<Event | Venue | null>(null);
+  // No modal; bookings open directly.
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,9 +74,6 @@ const Events = () => {
     };
     fetchData();
   }, []);
-
-  const isVenue = (item: Event | Venue): item is Venue => "venueName" in item;
-  const isEvent = (item: Event | Venue): item is Event => "title" in item;
 
   const filteredEvents = events.filter((event) => {
     const matchesCategory = activeCategory === "All" || event.category === activeCategory;
@@ -316,6 +313,7 @@ const Events = () => {
                   key={event._id}
                   className="group bg-white rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden animate-fade-in-up border border-border/50 hover:border-primary/50"
                   style={{ animationDelay: `${index * 0.05}s` }}
+                  onClick={() => navigate(`/events/${event._id}/book`)}
                 >
                   {/* Image Container */}
                   <div className="relative h-48 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden">
@@ -402,7 +400,7 @@ const Events = () => {
                   key={venue._id}
                   className="group bg-white rounded-xl shadow-sm hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden animate-fade-in-up border border-border/50 hover:border-purple-500/50"
                   style={{ animationDelay: `${index * 0.05}s` }}
-                  onClick={() => setSelectedItem(venue)}
+                  onClick={() => navigate(`/venues/${venue._id}/book`)}
                 >
                   {/* Header with Image */}
                   <div className="h-48 bg-gradient-to-br from-purple-500 via-pink-500 to-blue-500 relative overflow-hidden">
@@ -493,143 +491,6 @@ const Events = () => {
         </section>
       )}
 
-      {/* Detailed Modal/Sidebar for selected item */}
-      {selectedItem && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setSelectedItem(null)}>
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="float-right text-gray-500 hover:text-gray-700 text-2xl font-bold"
-              >
-                ✕
-              </button>
-              
-              {isEvent(selectedItem) ? (
-                <>
-                  <h2 className="text-3xl font-bold mb-2">{selectedItem.title}</h2>
-                  <div className="inline-block px-3 py-1 bg-blue-600 text-white rounded-full text-sm font-bold mb-4">
-                    {selectedItem.category}
-                  </div>
-                  
-                  {selectedItem.image && (
-                    <img
-                      src={selectedItem.image}
-                      alt={selectedItem.title}
-                      className="w-full h-96 object-cover rounded-lg mb-6"
-                    />
-                  )}
-
-                  <div className="space-y-4 mb-6">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
-                      <p className="text-gray-700">{selectedItem.description}</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 bg-blue-50 rounded-lg">
-                        <p className="text-xs text-gray-500 mb-1">Date</p>
-                        <p className="font-bold text-gray-900 flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-blue-600" />
-                          {new Date(selectedItem.date).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-blue-50 rounded-lg">
-                        <p className="text-xs text-gray-500 mb-1">Location</p>
-                        <p className="font-bold text-gray-900 flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-blue-600" />
-                          {selectedItem.location}
-                        </p>
-                      </div>
-                      {selectedItem.startTime && (
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <p className="text-xs text-gray-500 mb-1">Start Time</p>
-                          <p className="font-bold text-gray-900">{selectedItem.startTime}</p>
-                        </div>
-                      )}
-                      {selectedItem.endTime && (
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <p className="text-xs text-gray-500 mb-1">End Time</p>
-                          <p className="font-bold text-gray-900">{selectedItem.endTime}</p>
-                        </div>
-                      )}
-                      {selectedItem.capacity && (
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <p className="text-xs text-gray-500 mb-1">Capacity</p>
-                          <p className="font-bold text-gray-900">{selectedItem.capacity}</p>
-                        </div>
-                      )}
-                      <div className="p-3 bg-blue-50 rounded-lg">
-                        <p className="text-xs text-gray-500 mb-1">Price</p>
-                        <p className="font-bold text-gray-900">
-                          {selectedItem.price ? `$${selectedItem.price}` : "Free"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white h-12 font-bold hover:shadow-lg">
-                    Get Tickets
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                      <Building2 className="w-8 h-8 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-bold mb-2">{selectedItem.venueName}</h2>
-                      <span className="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-sm font-bold inline-block">
-                        {selectedItem.businessType}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 mb-6">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
-                      <p className="text-gray-700">{selectedItem.description}</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 bg-purple-50 rounded-lg">
-                        <p className="text-xs text-gray-500 mb-1">City</p>
-                        <p className="font-bold text-gray-900 flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-purple-600" />
-                          {selectedItem.city}
-                        </p>
-                      </div>
-                      {selectedItem.address && (
-                        <div className="p-3 bg-purple-50 rounded-lg">
-                          <p className="text-xs text-gray-500 mb-1">Address</p>
-                          <p className="font-bold text-gray-900 text-sm">{selectedItem.address}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {selectedItem.website && (
-                      <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-                        <p className="text-sm text-gray-500 mb-1">Website</p>
-                        <a
-                          href={selectedItem.website}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-purple-600 hover:text-purple-700 font-bold underline break-all"
-                        >
-                          {selectedItem.website}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Contact Venue button removed per request */}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
