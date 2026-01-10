@@ -1,9 +1,18 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.abhishek.bookit',
-  appName: 'vite_react_shadcn_ts',
-  webDir: 'dist'
+  appId: 'com.abhishek.vibeweaver',
+  appName: 'Vibe Weaver',
+  webDir: 'dist',
+  server: {
+    androidScheme: 'http',
+    allowNavigation: ['http://localhost:10000']
+  },
+  plugins: {
+    CapacitorHttp: {
+      enabled: true,
+    },
+  },
 };
 
 export default config;

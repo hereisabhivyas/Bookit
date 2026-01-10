@@ -175,6 +175,9 @@ const defaultLocalOrigins = [
   'http://localhost:8080',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:4173',
+  'http://localhost', // Capacitor Android serves from http://localhost
+  'capacitor://localhost', // Capacitor iOS uses capacitor:// scheme
+  'ionic://localhost', // Ionic apps may use ionic:// scheme
 ];
 
 const extraOrigins = (process.env.ALLOWED_ORIGINS || '')
