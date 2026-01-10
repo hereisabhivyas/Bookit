@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "78068102316",
+    "project_id": "bookit028",
+    "storage_bucket": "bookit028.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:78068102316:android:506789ee43fde1494a9b09",
+        "android_client_info": {
+          "package_name": "com.abhishek.bookit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "78068102316-jes32f127mi8ef8tuub706tas580546f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.abhishek.bookit",
+            "certificate_hash": "d4ac02eda7e0f27197da5cb112fe76a04f39ab23"
+          }
+        },
+        {
+          "client_id": "78068102316-n3aqijnsjifjpibjf05ohigc3dq16kv2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHQjR9KxUVnhBVn4iqYoxxrmB32yEto3M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "78068102316-n3aqijnsjifjpibjf05ohigc3dq16kv2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
