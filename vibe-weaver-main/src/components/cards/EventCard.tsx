@@ -52,7 +52,7 @@ const EventCard = ({
   return (
     <div
       onClick={handleOpen}
-      className="group glass-card overflow-hidden cursor-pointer hover-lift flex flex-col"
+      className="group glass-card overflow-hidden cursor-pointer hover-lift flex flex-col w-full max-w-full"
     >
       {/* Image */}
       <div className="relative h-48 overflow-hidden flex-shrink-0">
@@ -75,26 +75,28 @@ const EventCard = ({
       </div>
 
       {/* Content */}
-      <div className="p-5">
-        <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+      <div className="p-4 sm:p-5">
+        <h3 className="text-base sm:text-lg font-bold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors break-words">
           {title}
         </h3>
 
         <div className="space-y-2 mb-4 pb-4 border-b border-border/50">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Calendar className="w-4 h-4 text-accent" />
-            <span>{date}</span>
+          <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm">
+            <Calendar className="w-4 h-4 text-accent flex-shrink-0" />
+            <span className="truncate">{date}</span>
           </div>
-          <div className="flex items-center justify-between gap-2 text-muted-foreground text-sm">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center justify-between gap-2 text-muted-foreground text-xs sm:text-sm min-w-0">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <MapPin className="w-4 h-4 text-secondary flex-shrink-0" />
               <span className="truncate">{location}</span>
             </div>
-            <DistancePill destination={location} />
+            <div className="flex-shrink-0">
+              <DistancePill destination={location} />
+            </div>
           </div>
         </div>
 
-        <Button variant="gradient" className="w-full" onClick={handleBook}>
+        <Button variant="gradient" className="w-full text-sm" onClick={handleBook}>
           Book Now
         </Button>
       </div>
