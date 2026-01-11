@@ -1485,6 +1485,70 @@ app.get('/admin/payments', getAdminFromToken, async (req, res) => {
   }
 });
 
+// Admin: Communities management
+app.get('/admin/communities', getAdminFromToken, async (req, res) => {
+  try {
+    const communities = await Community.find({}).sort({ createdAt: -1 });
+    res.json(communities);
+  } catch (err) {
+    console.error('Error fetching communities (admin):', err);
+    res.status(500).json({ error: 'Failed to fetch communities' });
+  }
+});
+
+app.get('/admin/communities/:id/members', getAdminFromToken, async (req, res) => {
+  try {
+    const community = await Community.findById(req.params.id);
+    if (!community) return res.status(404).json({ error: 'Community not found' });
+    const members = await CommunityMember.find({ communityId: req.params.id }).sort({ role: -1, createdAt: -1 });
+    res.json(members);
+  } catch (err) {
+    console.error('Error fetching community members (admin):', err);
+    res.status(500).json({ error: 'Failed to fetch members' });
+  }
+});
+
+app.delete('/admin/communities/:id', getAdminFromToken, async (req, res) => {
+  try {
+    const community = await Community.findById(req.params.id);
+    if (!community) return res.status(404).json({ error: 'Community not found' });
+
+    await CommunityMember.deleteMany({ communityId: req.params.id });
+    await Message.deleteMany({ communityId: req.params.id });
+    await Community.findByIdAndDelete(req.params.id);
+
+    res.json({ message: 'Community deleted' });
+  } catch (err) {
+    console.error('Error deleting community (admin):', err);
+    res.status(500).json({ error: 'Failed to delete community' });
+  }
+});
+
+app.delete('/admin/communities/:id/members/:memberEmail', getAdminFromToken, async (req, res) => {
+  try {
+    const communityId = req.params.id;
+    const memberEmail = req.params.memberEmail;
+
+    const community = await Community.findById(communityId);
+    if (!community) return res.status(404).json({ error: 'Community not found' });
+
+    const memberDoc = await CommunityMember.findOne({ communityId, userEmail: memberEmail });
+    if (!memberDoc) return res.status(404).json({ error: 'Member not found' });
+
+    const wasActive = memberDoc.status === 'active';
+    await CommunityMember.deleteOne({ communityId, userEmail: memberEmail });
+
+    if (wasActive) {
+      await Community.findByIdAndUpdate(communityId, { $inc: { members: -1 } });
+    }
+
+    res.json({ message: 'Member removed' });
+  } catch (err) {
+    console.error('Error removing member (admin):', err);
+    res.status(500).json({ error: 'Failed to remove member' });
+  }
+});
+
 // Public endpoints for fetching categories, events, and communities
 app.get('/api/categories', async (req, res) => {
   try {
