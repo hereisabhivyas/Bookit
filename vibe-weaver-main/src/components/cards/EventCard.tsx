@@ -52,7 +52,7 @@ const EventCard = ({
   return (
     <div
       onClick={handleOpen}
-      className="group glass-card overflow-hidden cursor-pointer hover-lift h-full flex flex-col"
+      className="group glass-card overflow-hidden cursor-pointer hover-lift flex flex-col"
     >
       {/* Image */}
       <div className="relative h-48 overflow-hidden flex-shrink-0">
@@ -75,12 +75,12 @@ const EventCard = ({
       </div>
 
       {/* Content */}
-      <div className="p-5 flex-1 flex flex-col">
-        <h3 className="text-lg font-bold text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+      <div className="p-5">
+        <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
           {title}
         </h3>
 
-        <div className="space-y-2 mb-4 flex-1">
+        <div className="space-y-2 mb-4 pb-4 border-b border-border/50">
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Calendar className="w-4 h-4 text-accent" />
             <span>{date}</span>
@@ -92,24 +92,9 @@ const EventCard = ({
             </div>
             <DistancePill destination={location} />
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Users className="w-4 h-4 text-primary" />
-            <span>{attendees} attending</span>
-          </div>
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-border/50">
-          <div>
-            <span className="text-2xl font-bold gradient-text">₹{price}</span>
-            <span className="text-muted-foreground text-sm ml-1">/person</span>
-          </div>
-          <div className="flex items-center gap-1 text-warning">
-            <Star className="w-4 h-4 fill-warning" />
-            <span className="font-semibold">{rating.toFixed(1)}</span>
-          </div>
-        </div>
-
-        <Button variant="gradient" className="w-full mt-4" onClick={handleBook}>
+        <Button variant="gradient" className="w-full" onClick={handleBook}>
           Book Now
         </Button>
       </div>
