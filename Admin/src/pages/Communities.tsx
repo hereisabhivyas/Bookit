@@ -38,6 +38,8 @@ const Communities = () => {
   const adminToken = localStorage.getItem("adminToken") || "";
   const apiBase = API_URL;
 
+  const [adminAvailable, setAdminAvailable] = useState(true);
+
   const fetchCommunities = async () => {
     setLoading(true);
     setError("");
@@ -46,14 +48,31 @@ const Communities = () => {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       setCommunities(resp.data || []);
+      setAdminAvailable(true);
     } catch (e: any) {
-      setError(e?.response?.data?.error || "Failed to fetch communities");
+      const status = e?.response?.status;
+      if (status === 404) {
+        // Fallback to public communities listing (read-only)
+        try {
+          const pub = await axios.get<Community[]>(`${apiBase}/api/communities`);
+          setCommunities(pub.data || []);
+          setAdminAvailable(false);
+        } catch (e2: any) {
+          setError(e2?.response?.data?.error || "Failed to fetch communities");
+        }
+      } else {
+        setError(e?.response?.data?.error || "Failed to fetch communities");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const fetchMembers = async (communityId: string) => {
+    if (!adminAvailable) {
+      setMembers([]);
+      return;
+    }
     setMembersLoading(true);
     try {
       const resp = await axios.get<Member[]>(`${apiBase}/admin/communities/${communityId}/members`, {
@@ -110,6 +129,11 @@ const Communities = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Community Management</h1>
               <p className="text-gray-600">Manage user-created communities and members</p>
+              {!adminAvailable && (
+                <div className="mt-2 text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 px-3 py-2 rounded">
+                  Admin API not yet deployed — showing read-only list.
+                </div>
+              )}
             </div>
             <button
               onClick={fetchCommunities}
@@ -151,12 +175,14 @@ const Communities = () => {
                           <p className="text-sm text-gray-600 truncate">{c.category} · {c.members} members</p>
                         </div>
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDeleteCommunity(c._id); }}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      {adminAvailable && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteCommunity(c._id); }}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
                     </div>
                     <p className="text-sm text-gray-700 line-clamp-3">{c.description}</p>
                     <button
@@ -194,12 +220,14 @@ const Communities = () => {
               <div className="p-6 space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">Members</h3>
-                  <button
-                    onClick={() => handleDeleteCommunity(selected._id)}
-                    className="px-3 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
-                  >
-                    Delete Community
-                  </button>
+                  {adminAvailable && (
+                    <button
+                      onClick={() => handleDeleteCommunity(selected._id)}
+                      className="px-3 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
+                    >
+                      Delete Community
+                    </button>
+                  )}
                 </div>
 
                 {membersLoading ? (
@@ -214,12 +242,14 @@ const Communities = () => {
                           <p className="font-medium text-gray-900">{m.userName} <span className="text-gray-500">({m.userEmail})</span></p>
                           <p className="text-sm text-gray-600">{m.role} · {m.status}</p>
                         </div>
-                        <button
-                          onClick={() => handleRemoveMember(selected._id, m.userEmail)}
-                          className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm"
-                        >
-                          Remove
-                        </button>
+                        {adminAvailable && (
+                          <button
+                            onClick={() => handleRemoveMember(selected._id, m.userEmail)}
+                            className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm"
+                          >
+                            Remove
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
