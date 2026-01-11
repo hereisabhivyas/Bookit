@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useGoogleLogin } from '@react-oauth/google';
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, Sparkles } from "lucide-react";
 import axios from "axios";
 import { API_URL } from "@/lib/api";
+import { Capacitor } from '@capacitor/core';
+import { isNativeAndroid, signInNative } from '@/lib/googleNative';
 
 
 const Auth = () => {
@@ -21,6 +23,44 @@ const Auth = () => {
   const [serverError, setServerError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; name?: string }>({});
+  const onAndroid = Capacitor.getPlatform() === 'android';
+
+  useEffect(() => {
+    // Set up native Google Sign-In callback handler for Android
+    if (onAndroid) {
+      (window as any).handleGoogleSignInSuccess = async (data: any) => {
+        setLoading(true);
+        setServerError("");
+        try {
+          // For native Android, we use idToken instead of access_token
+          const resp = await axios.post(
+            `${API_URL}/auth/google`,
+            { token: data.idToken || data.accessToken, email: data.email },
+            { withCredentials: true }
+          );
+          const respData = resp.data;
+          if (respData?.token) {
+            localStorage.setItem('token', respData.token);
+            if (respData?.user?.email) {
+              localStorage.setItem('userEmail', respData.user.email);
+            }
+            navigate("/");
+          }
+          setSuccessMessage('Signed in with Google');
+        } catch (err: any) {
+          const msg = err?.response?.data?.error || err.message || 'Google authentication failed';
+          setServerError(msg);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      (window as any).handleGoogleSignInFailure = (data: any) => {
+        setServerError(data?.error || 'Google authentication failed');
+      };
+    }
+  }, [onAndroid, navigate]);
+
   function validate() {
     const errors: { email?: string; password?: string; name?: string } = {};
     const emailRegex = /\S+@\S+\.\S+/;
@@ -265,7 +305,18 @@ const Auth = () => {
               variant="outline" 
               type="button" 
               className="w-full h-12"
-              onClick={() => handleGoogleLogin()}
+              onClick={async () => {
+                if (onAndroid) {
+                  try {
+                    await signInNative();
+                  } catch (e: any) {
+                    setServerError(e?.message || 'Google sign-in not available');
+                  }
+                } else {
+                  // Use web OAuth on browsers
+                  handleGoogleLogin();
+                }
+              }}
               disabled={loading}
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">

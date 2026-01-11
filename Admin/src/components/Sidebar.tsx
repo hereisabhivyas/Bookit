@@ -25,6 +25,7 @@ const Sidebar = () => {
     { path: "/host-requests", label: "Host Requests", icon: FileCheck },
     { path: "/bookings", label: "Booking History", icon: Receipt },
     { path: "/payments", label: "Payment History", icon: CreditCard },
+    { path: "/communities", label: "Communities", icon: Users },
   ];
 
   return (

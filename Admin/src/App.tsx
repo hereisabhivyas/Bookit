@@ -7,6 +7,7 @@ import Venues from "./pages/Venues";
 import HostRequests from "./pages/HostRequests";
 import BookingHistory from "./pages/BookingHistory";
 import PaymentHistory from "./pages/PaymentHistory";
+import Communities from "./pages/Communities";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -63,6 +64,12 @@ const App = () => {
           path="/payments"
           element={
             isAuthenticated ? <PaymentHistory /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/communities"
+          element={
+            isAuthenticated ? <Communities /> : <Navigate to="/login" />
           }
         />
         <Route path="/" element={<Navigate to="/dashboard" />} />
