@@ -3,7 +3,7 @@ import { io as ioClient, Socket } from "socket.io-client";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Users, Lock, Globe, Settings, Trash2, LogOut, Edit2, UserMinus, Shield, Plus, Check, X } from "lucide-react";
+import { ArrowLeft, Send, Users, Lock, Globe, Settings, Trash2, LogOut, Edit2, UserMinus, Shield, Plus, Check, X, Camera as CameraIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -38,6 +38,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { API_URL } from "@/lib/api";
+import { pickSingleImage } from "@/lib/imagePicker";
+import { uploadSingleImage } from "@/lib/uploadHelper";
 
 interface Message {
   _id: string;
@@ -547,26 +549,26 @@ const CommunityChat = () => {
     }
   };
 
-  const handleUploadIcon = async () => {
-    if (!logoFile) return;
+  const handleSelectIcon = async () => {
+    try {
+      const file = await pickSingleImage();
+      if (file) {
+        setLogoFile(file);
+        // Automatically upload after selection
+        handleUploadIcon(file);
+      }
+    } catch (err: any) {
+      console.error("Error selecting icon:", err);
+      toast({ title: 'Selection failed', description: 'Unable to select icon image', variant: 'destructive' });
+    }
+  };
+
+  const handleUploadIcon = async (fileToUpload?: File) => {
+    const file = fileToUpload || logoFile;
+    if (!file) return;
     setUploadingLogo(true);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Not authenticated');
-      const formData = new FormData();
-      formData.append('images', logoFile);
-      const resp = await fetch(`${apiBase}/upload/images`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData,
-      });
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to upload logo');
-      }
-      const data = await resp.json();
-      const url = data?.urls?.[0];
-      if (!url) throw new Error('No logo URL returned');
+      const url = await uploadSingleImage(file);
       setEditFormData(prev => ({ ...prev, icon: url }));
       setLogoFile(null);
       toast({ title: 'Logo uploaded', description: 'Logo has been set for this community.' });
@@ -1008,12 +1010,24 @@ const CommunityChat = () => {
                       ) : (
                         <div className="w-16 h-16 rounded bg-muted flex items-center justify-center text-2xl">{editFormData.icon || '👥'}</div>
                       )}
-                      <Input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} className="max-w-xs" />
-                      <Button variant="outline" size="sm" onClick={handleUploadIcon} disabled={!logoFile || uploadingLogo}>
-                        {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleSelectIcon} 
+                        disabled={uploadingLogo}
+                        className="flex items-center gap-2"
+                      >
+                        <CameraIcon className="w-4 h-4" />
+                        {uploadingLogo ? 'Uploading...' : 'Choose Logo'}
                       </Button>
+                      {logoFile && (
+                        <span className="text-sm text-muted-foreground">
+                          {logoFile.name}
+                        </span>
+                      )}
                       {editFormData.icon && (editFormData.icon.startsWith('http') || editFormData.icon.startsWith('data:')) && (
-                        <Button variant="ghost" size="sm" onClick={() => setEditFormData({ ...editFormData, icon: '' })}>Remove</Button>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => setEditFormData({ ...editFormData, icon: '' })}>Remove</Button>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">Upload a square image to use as your community logo.</p>

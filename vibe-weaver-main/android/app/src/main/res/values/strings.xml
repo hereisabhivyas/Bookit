@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">vite_react_shadcn_ts</string>
-    <string name="title_activity_main">vite_react_shadcn_ts</string>
+    <string name="app_name">BookIt</string>
+    <string name="title_activity_main">BookIt</string>
     <string name="package_name">com.abhishek.bookit</string>
     <string name="custom_url_scheme">com.abhishek.bookit</string>
     <string name="default_web_client_id">214617912712-octfprnlbi17eagsn49hb726anbs7ife.apps.googleusercontent.com</string>

@@ -3,7 +3,7 @@ import Navbar from "@/components/layout/Navbar";
 import CommunityCard from "@/components/cards/CommunityCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Users, TrendingUp, Star, Clock, Lock, Globe, UserPlus } from "lucide-react";
+import { Search, Plus, Users, TrendingUp, Star, Clock, Lock, Globe, UserPlus, Camera as CameraIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/lib/api";
+import { pickSingleImage } from "@/lib/imagePicker";
+import { uploadSingleImage } from "@/lib/uploadHelper";
 
 const Communities = () => {
   const [activeFilter, setActiveFilter] = useState("all");
@@ -95,26 +97,26 @@ const Communities = () => {
     }
   };
 
-  const handleUploadLogo = async () => {
-    if (!logoFile) return;
+  const handleSelectLogo = async () => {
+    try {
+      const file = await pickSingleImage();
+      if (file) {
+        setLogoFile(file);
+        // Automatically upload after selection
+        handleUploadLogo(file);
+      }
+    } catch (err: any) {
+      console.error("Error selecting logo:", err);
+      toast({ title: 'Selection failed', description: 'Unable to select logo image', variant: 'destructive' });
+    }
+  };
+
+  const handleUploadLogo = async (fileToUpload?: File) => {
+    const file = fileToUpload || logoFile;
+    if (!file) return;
     setUploadingLogo(true);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Not authenticated');
-      const formDataUpload = new FormData();
-      formDataUpload.append('images', logoFile);
-      const resp = await fetch(`${API_URL}/upload/images`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formDataUpload,
-      });
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to upload logo');
-      }
-      const data = await resp.json();
-      const url = data?.urls?.[0];
-      if (!url) throw new Error('No logo URL returned');
+      const url = await uploadSingleImage(file);
       setFormData(prev => ({ ...prev, icon: url }));
       setLogoFile(null);
       toast({ title: 'Logo uploaded', description: 'Logo has been set for this community.' });
@@ -274,10 +276,22 @@ const Communities = () => {
                         ) : (
                           <div className="w-16 h-16 rounded bg-muted flex items-center justify-center text-2xl">{formData.icon || '👥'}</div>
                         )}
-                        <Input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} className="max-w-xs" />
-                        <Button variant="outline" size="sm" onClick={handleUploadLogo} disabled={!logoFile || uploadingLogo}>
-                          {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                        <Button 
+                          type="button"
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleSelectLogo} 
+                          disabled={uploadingLogo}
+                          className="flex items-center gap-2"
+                        >
+                          <CameraIcon className="w-4 h-4" />
+                          {uploadingLogo ? 'Uploading...' : 'Choose Logo'}
                         </Button>
+                        {logoFile && (
+                          <span className="text-sm text-muted-foreground">
+                            {logoFile.name}
+                          </span>
+                        )}
                       </div>
                       <div className="text-sm text-muted-foreground mb-4">Or choose an emoji:</div>
                       <div className="grid grid-cols-6 gap-2">

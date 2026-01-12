@@ -33,8 +33,11 @@ import {
   Building2,
   Calendar,
   Receipt,
+  Camera as CameraIcon,
 } from "lucide-react";
 import { API_URL } from "@/lib/api";
+import { pickImageWithPrompt } from "@/lib/imagePicker";
+import { uploadSingleImage } from "@/lib/uploadHelper";
 
 const Profile = () => {
   const apiBase = API_URL;
@@ -162,8 +165,24 @@ const Profile = () => {
     }
   };
 
-  const handleUploadProfilePhoto = async () => {
-    if (!profileImageFile) {
+  const handleSelectProfilePhoto = async () => {
+    try {
+      const file = await pickImageWithPrompt();
+      if (file) {
+        setProfileImageFile(file);
+        // Automatically upload after selection
+        handleUploadProfilePhoto(file);
+      }
+    } catch (err: any) {
+      console.error("Error selecting image:", err);
+      setError("Failed to select image");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
+  const handleUploadProfilePhoto = async (fileToUpload?: File) => {
+    const file = fileToUpload || profileImageFile;
+    if (!file) {
       setError("Please select a photo to upload");
       setTimeout(() => setError(""), 3000);
       return;
@@ -172,21 +191,9 @@ const Profile = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const formData = new FormData();
-      formData.append("images", profileImageFile);
-
-      const uploadResp = await axios.post(
-        `${apiBase}/upload/images`,
-        formData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const url = uploadResp?.data?.urls?.[0];
-      if (!url) {
-        throw new Error("Upload succeeded but no image URL returned");
-      }
+      
+      // Upload using native fetch to avoid CapacitorHttp issues
+      const url = await uploadSingleImage(file);
 
       const saveResp = await axios.put(
         `${apiBase}/auth/profile`,
@@ -407,20 +414,21 @@ const Profile = () => {
                         Profile Picture
                       </h3>
                       <div className="flex items-center gap-3">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => setProfileImageFile(e.target.files?.[0] || null)}
-                          className="max-w-xs"
-                        />
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={handleUploadProfilePhoto}
-                          disabled={uploadingProfileImage || !profileImageFile}
+                          onClick={handleSelectProfilePhoto}
+                          disabled={uploadingProfileImage}
+                          className="flex items-center gap-2"
                         >
-                          {uploadingProfileImage ? "Uploading..." : "Upload Photo"}
+                          <CameraIcon className="w-4 h-4" />
+                          {uploadingProfileImage ? "Uploading..." : "Choose Photo"}
                         </Button>
+                        {profileImageFile && (
+                          <span className="text-sm text-muted-foreground">
+                            {profileImageFile.name}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

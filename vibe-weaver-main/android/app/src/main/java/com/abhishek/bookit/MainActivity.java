@@ -5,7 +5,6 @@ import android.os.Build;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.Bridge;
-import com.getcapacitor.Plugin;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -18,19 +17,18 @@ public class MainActivity extends BridgeActivity {
     private static final int RC_SIGN_IN = 9001;
     private GoogleSignInClient mGoogleSignInClient;
     private static final String TAG = "GoogleSignIn";
-    private Bridge bridge;
 
     @Override
     public void onCreate(android.os.Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        bridge = this.getBridge();
-        // Register the native GoogleSignIn plugin so JS can call it
+        
+        // Register custom plugins
         registerPlugin(GoogleSignInPlugin.class);
+        
         initializeGoogleSignIn();
     }
 
     private void initializeGoogleSignIn() {
-        // Configure Google Sign-In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestProfile()
@@ -41,7 +39,8 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // ESSENTIAL: Allow Capacitor to handle plugin results first
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == RC_SIGN_IN) {
@@ -57,36 +56,33 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void handleSignInSuccess(GoogleSignInAccount account) {
-        Log.d(TAG, "firebaseAuthWithGoogle:" + account.getId());
         String idToken = account.getIdToken();
         String email = account.getEmail();
         String displayName = account.getDisplayName();
 
-        // Send this to your JavaScript via a bridge call
         String js = "window.handleGoogleSignInSuccess && window.handleGoogleSignInSuccess({" +
                 "idToken: '" + (idToken != null ? idToken : "") + "', " +
                 "email: '" + (email != null ? email : "") + "', " +
                 "displayName: '" + (displayName != null ? displayName : "") + "'" +
                 "})";
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            WebView webView = getBridge().getWebView();
-            if (webView != null) {
-                webView.evaluateJavascript(js, null);
-            }
-        }
+        evaluateJavaScript(js);
     }
 
     private void handleSignInFailure(Exception e) {
-        Log.d(TAG, "signInFailed:" + e.getMessage());
         String js = "window.handleGoogleSignInFailure && window.handleGoogleSignInFailure({error: '" + e.getMessage() + "'})";
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            WebView webView = getBridge().getWebView();
-            if (webView != null) {
-                webView.evaluateJavascript(js, null);
+        evaluateJavaScript(js);
+    }
+
+    private void evaluateJavaScript(final String js) {
+        runOnUiThread(() -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                WebView webView = getBridge().getWebView();
+                if (webView != null) {
+                    webView.evaluateJavascript(js, null);
+                }
             }
-        }
+        });
     }
 
     public void startGoogleSignIn() {
@@ -94,4 +90,3 @@ public class MainActivity extends BridgeActivity {
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 }
-

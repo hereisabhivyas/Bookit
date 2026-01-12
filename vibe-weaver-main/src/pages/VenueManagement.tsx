@@ -27,9 +27,14 @@ import {
   CheckCircle,
   ArrowLeft,
   Armchair,
+  Camera as CameraIcon,
+  ImagePlus,
 } from "lucide-react";
 import { API_URL } from "@/lib/api";
 import { MapPickerDialog } from "@/components/ui/map-picker";
+import { pickMultipleImages } from "@/lib/imagePicker";
+import { uploadImages } from "@/lib/uploadHelper";
+import { uploadImages } from "@/lib/uploadHelper";
 
 const VenueManagement = () => {
   const apiBase = API_URL;
@@ -60,7 +65,7 @@ const VenueManagement = () => {
     images: [] as string[],
   });
 
-  const [imageFiles, setImageFiles] = useState<FileList | null>(null);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
 
   // Seat/Capacity management
@@ -332,8 +337,25 @@ const VenueManagement = () => {
     }
   };
 
+  const handleSelectImages = async () => {
+    try {
+      const files = await pickMultipleImages();
+      if (files && files.length > 0) {
+        setSelectedImages((prev) => [...prev, ...files]);
+      }
+    } catch (err: any) {
+      console.error("Error selecting images:", err);
+      setError("Failed to select images");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
+  const handleRemoveSelectedImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleImageUpload = async () => {
-    if (!imageFiles || imageFiles.length === 0) {
+    if (!selectedImages || selectedImages.length === 0) {
       setError("Please select at least one image file");
       setTimeout(() => setError(""), 3000);
       return;
@@ -344,42 +366,23 @@ const VenueManagement = () => {
     setSuccess("");
     
     try {
-      const token = localStorage.getItem("token");
-      const formData = new FormData();
+      // Upload using native fetch to avoid CapacitorHttp issues
+      const urls = await uploadImages(selectedImages);
       
-      for (let i = 0; i < imageFiles.length; i++) {
-        formData.append("images", imageFiles[i]);
-      }
-
-      const resp = await axios.post(
-        `${apiBase}/upload/images`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (resp.data && resp.data.urls) {
-        setVenueData((prev) => ({
-          ...prev,
-          images: [...prev.images, ...resp.data.urls],
-        }));
-        setSuccess(`${resp.data.urls.length} image(s) uploaded successfully!`);
-        setTimeout(() => setSuccess(""), 3000);
-        // Clear the file input
-        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
-      }
+      setVenueData((prev) => ({
+        ...prev,
+        images: [...prev.images, ...urls],
+      }));
+      setSuccess(`${urls.length} image(s) uploaded successfully!`);
+      setTimeout(() => setSuccess(""), 3000);
+      setSelectedImages([]);
     } catch (err: any) {
       console.error("Upload error:", err);
-      const errorMsg = err?.response?.data?.error || err?.message || "Failed to upload images";
+      const errorMsg = err?.message || "Failed to upload images";
       setError(errorMsg);
       setTimeout(() => setError(""), 5000);
     } finally {
       setUploadingImages(false);
-      setImageFiles(null);
     }
   };
 
@@ -699,23 +702,56 @@ const VenueManagement = () => {
               <h2 className="text-2xl font-semibold mb-6">Image Gallery</h2>
               
               <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => setImageFiles(e.target.files)}
-                    className="flex-1"
-                  />
+                <div className="flex items-center gap-4 flex-wrap">
                   <Button
-                    onClick={handleImageUpload}
-                    disabled={!imageFiles || uploadingImages}
-                    className="bg-gradient-to-r from-primary to-secondary"
+                    onClick={handleSelectImages}
+                    disabled={uploadingImages}
+                    variant="outline"
+                    className="flex items-center gap-2"
                   >
-                    <Upload className="w-4 h-4 mr-2" />
-                    {uploadingImages ? "Uploading..." : "Upload"}
+                    <ImagePlus className="w-4 h-4" />
+                    Select Images
                   </Button>
+                  
+                  {selectedImages.length > 0 && (
+                    <Button
+                      onClick={handleImageUpload}
+                      disabled={uploadingImages}
+                      className="bg-gradient-to-r from-primary to-secondary"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploadingImages ? "Uploading..." : `Upload ${selectedImages.length} Image(s)`}
+                    </Button>
+                  )}
                 </div>
+
+                {/* Selected images preview */}
+                {selectedImages.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Selected Images ({selectedImages.length})</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {selectedImages.map((file, idx) => (
+                        <div key={idx} className="relative group">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`Selected ${idx + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border"
+                          />
+                          <button
+                            onClick={() => handleRemoveSelectedImage(idx)}
+                            type="button"
+                            className="absolute top-2 right-2 p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all z-10 duration-200 shadow-lg"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                            {file.name.length > 15 ? file.name.substring(0, 15) + '...' : file.name}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {venueData.images.length > 0 && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
