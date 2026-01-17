@@ -202,7 +202,7 @@ const BookingHistory = () => {
           vb.userEmail,
           vb.date,
           `${vb.startTime} - ${vb.endTime}`,
-          `$${vb.totalPrice}`,
+          `₹${vb.totalPrice}`,
           `${vb.city}`,
         ];
       } else {
@@ -213,7 +213,7 @@ const BookingHistory = () => {
           eb.userEmail,
           eb.date,
           `${eb.startTime} - ${eb.endTime}`,
-          `$${eb.totalPrice}`,
+          `₹${eb.totalPrice}`,
           eb.location,
         ];
       }
@@ -265,7 +265,7 @@ const BookingHistory = () => {
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
                     <p className="text-2xl font-bold text-green-600">
-                      ${summary.totalRevenue.toFixed(2)}
+                      ₹{summary.totalRevenue.toFixed(2)}
                     </p>
                   </div>
                   <div className="p-3 bg-green-100 rounded-lg">
@@ -543,10 +543,10 @@ const BookingHistory = () => {
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-purple-600">
-                            ${vb.totalPrice.toFixed(2)}
+                            ₹{vb.totalPrice.toFixed(2)}
                           </p>
                           <p className="text-sm text-gray-600">
-                            ${vb.pricePerHour}/hour
+                            ₹{vb.pricePerHour}/hour
                           </p>
                         </div>
                       </div>
@@ -615,10 +615,10 @@ const BookingHistory = () => {
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-orange-600">
-                            ${eb.totalPrice.toFixed(2)}
+                            ₹{eb.totalPrice.toFixed(2)}
                           </p>
                           <p className="text-sm text-gray-600">
-                            ${eb.pricePerTicket}/ticket
+                            ₹{eb.pricePerTicket}/ticket
                           </p>
                         </div>
                       </div>
